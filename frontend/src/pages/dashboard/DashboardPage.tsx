@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../../features/auth/model/useAuth'
 
 export function DashboardPage() {
-  const { account } = useAuth()
+  const { account, academies } = useAuth()
 
   if (account?.platformRole === 'SUPER_ADMIN') {
     return (
@@ -17,17 +17,36 @@ export function DashboardPage() {
     )
   }
 
+  const staffMembership = academies.find((academy) =>
+    academy.roles.includes('ADMIN') || academy.roles.includes('COACH'))
+  const isCoach = staffMembership?.roles.includes('COACH') && !staffMembership.roles.includes('ADMIN')
+
+  if (staffMembership) {
+    return (
+      <section className="centered-page">
+        <div className="empty-state">
+          <p className="eyebrow">{isCoach ? 'Кабинет тренера' : 'Рабочее пространство'}</p>
+          <h1>Добро пожаловать, {account?.fullName || 'пользователь'}.</h1>
+          <p>{isCoach
+            ? `Откройте назначенные группы академии «${staffMembership.academyName}» и отметьте посещаемость.`
+            : `Управляйте академией «${staffMembership.academyName}».`}</p>
+          <Link className="button" to={isCoach ? '/academy/attendance' : '/academy'}>
+            {isCoach ? 'Открыть посещаемость' : 'Открыть CRM'}
+          </Link>
+        </div>
+      </section>
+    )
+  }
+
   return (
     <section className="centered-page">
       <div className="empty-state">
         <p className="eyebrow">Рабочее пространство</p>
         <h1>Добро пожаловать, {account?.fullName || 'пользователь'}.</h1>
-        <p>
-          Авторизация работает. На следующем этапе здесь появится панель, соответствующая вашей
-          роли в академии.
-        </p>
+        <p>{academies.some((academy) => academy.roles.includes('PARENT'))
+          ? 'Доступ родителя подключён. Кабинет ребёнка будет следующим этапом разработки.'
+          : 'Заявка на подключение академии ожидает рассмотрения или ещё не создана.'}</p>
         <div className="hero__actions">
-          <Link className="button" to="/academy">Открыть CRM</Link>
           <Link className="button button--secondary" to="/application">Посмотреть заявку</Link>
         </div>
       </div>

@@ -31,6 +31,7 @@ function latestBirthDate() {
 
 export function PlayersPage() {
   const { academy, token } = useAcademy()
+  const canManage = academy.roles.includes('ADMIN')
   const [groups, setGroups] = useState<AcademyGroup[]>([])
   const [result, setResult] = useState<PageResponse<Player> | null>(null)
   const [groupFilter, setGroupFilter] = useState('')
@@ -170,9 +171,11 @@ export function PlayersPage() {
           <h1>Игроки</h1>
           <p>Храните основные данные игрока и контакты родителя в его карточке.</p>
         </div>
-        <button className="button" type="button" disabled={!groups.length} onClick={() => setEditor('new')}>
-          Добавить игрока
-        </button>
+        {canManage && (
+          <button className="button" type="button" disabled={!groups.length} onClick={() => setEditor('new')}>
+            Добавить игрока
+          </button>
+        )}
       </div>
 
       {error && <div className="alert alert--error" role="alert">{error}</div>}
@@ -191,9 +194,11 @@ export function PlayersPage() {
 
       {!groups.length && !loading ? (
         <div className="list-state">
-          <strong>Сначала создайте группу</strong>
-          <span>Каждый игрок должен состоять в одной из групп академии.</span>
-          <Link className="button" to="/academy/groups">Перейти к группам</Link>
+          <strong>{canManage ? 'Сначала создайте группу' : 'Нет назначенных групп'}</strong>
+          <span>{canManage
+            ? 'Каждый игрок должен состоять в одной из групп академии.'
+            : 'После назначения группы здесь появится её состав.'}</span>
+          {canManage && <Link className="button" to="/academy/groups">Перейти к группам</Link>}
         </div>
       ) : loading ? (
         <div className="list-state">Загружаем игроков…</div>
@@ -222,22 +227,24 @@ export function PlayersPage() {
                   <dd>{player.parentPhone || 'Не указан'}</dd>
                 </div>
               </dl>
-              <div className="player-card__actions">
-                <button className="button button--secondary button--small" type="button" disabled={Boolean(actionId)} onClick={() => setEditor(player)}>
-                  Изменить
-                </button>
-                <button className="text-button text-button--danger" type="button" disabled={Boolean(actionId)} onClick={() => void handleDelete(player)}>
-                  Удалить
-                </button>
-              </div>
+              {canManage && (
+                <div className="player-card__actions">
+                  <button className="button button--secondary button--small" type="button" disabled={Boolean(actionId)} onClick={() => setEditor(player)}>
+                    Изменить
+                  </button>
+                  <button className="text-button text-button--danger" type="button" disabled={Boolean(actionId)} onClick={() => void handleDelete(player)}>
+                    Удалить
+                  </button>
+                </div>
+              )}
             </article>
           ))}
         </div>
       ) : (
         <div className="list-state">
           <strong>Игроков не найдено</strong>
-          <span>{groupFilter ? 'В выбранной группе пока нет игроков.' : 'Добавьте первого игрока академии.'}</span>
-          <button className="button" type="button" onClick={() => setEditor('new')}>Добавить игрока</button>
+          <span>{groupFilter ? 'В выбранной группе пока нет игроков.' : canManage ? 'Добавьте первого игрока академии.' : 'В назначенных группах пока нет игроков.'}</span>
+          {canManage && <button className="button" type="button" onClick={() => setEditor('new')}>Добавить игрока</button>}
         </div>
       )}
 
@@ -249,7 +256,7 @@ export function PlayersPage() {
         </nav>
       )}
 
-      {editor && (
+      {canManage && editor && (
         <div
           className="dialog-backdrop"
           role="presentation"

@@ -20,6 +20,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.junit.jupiter.*;
 import org.testcontainers.postgresql.PostgreSQLContainer;
+import java.time.LocalDate;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
@@ -45,6 +46,8 @@ class AcademyRosterTests {
 
     @BeforeEach
     void fixtures() {
+        jdbc.execute("delete from attendance_records");
+        jdbc.execute("delete from attendance_sessions");
         jdbc.execute("delete from players");
         jdbc.execute("delete from training_groups");
         jdbc.execute("delete from academy_applications");
@@ -186,6 +189,110 @@ class AcademyRosterTests {
     }
 
     @Test
+    void adminCanRecordAndUpdateAttendanceWithVersionCheck() throws Exception {
+        String group = group(tokenA, a, "U10");
+        String player = player(tokenA, a, group);
+        String date = LocalDate.now().minusDays(1).toString();
+        String path = base(a) + "/groups/" + group + "/attendance/" + date;
+
+        mvc.perform(get(path).header("Authorization", tokenA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.saved").value(false))
+                .andExpect(jsonPath("$.version").value(0))
+                .andExpect(jsonPath("$.players.length()").value(1))
+                .andExpect(jsonPath("$.players[0].status").doesNotExist());
+
+        mvc.perform(put(path).header("Authorization", tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(attendanceJson(0, player, "PRESENT", "Вовремя")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.saved").value(true))
+                .andExpect(jsonPath("$.version").value(0))
+                .andExpect(jsonPath("$.players[0].status").value("PRESENT"));
+
+        mvc.perform(put(path).header("Authorization", tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(attendanceJson(1, player, "ABSENT", null)))
+                .andExpect(status().isConflict());
+        mvc.perform(put(path).header("Authorization", tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(attendanceJson(0, player, "ABSENT", null)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.version").value(1))
+                .andExpect(jsonPath("$.players[0].status").value("ABSENT"));
+    }
+
+    @Test
+    void coachCanMarkOnlyAssignedGroupAndParentCannotAccessAttendance() throws Exception {
+        String assigned = group(tokenA, a, "Assigned");
+        String other = group(tokenA, a, "Other");
+        String player = player(tokenA, a, assigned);
+        String date = LocalDate.now().toString();
+        String assignedPath = base(a) + "/groups/" + assigned + "/attendance/" + date;
+        String otherPath = base(a) + "/groups/" + other + "/attendance/" + date;
+
+        mvc.perform(get(assignedPath).header("Authorization", tokenCoach)).andExpect(status().isNotFound());
+        mvc.perform(put(base(a) + "/groups/" + assigned + "/coaches/" + coach.getId())
+                        .header("Authorization", tokenA))
+                .andExpect(status().isNoContent());
+        mvc.perform(put(assignedPath).header("Authorization", tokenCoach)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(attendanceJson(0, player, "LATE", "Опоздал на 10 минут")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.players[0].status").value("LATE"));
+        mvc.perform(get(otherPath).header("Authorization", tokenCoach)).andExpect(status().isNotFound());
+        mvc.perform(get(assignedPath).header("Authorization", tokenParent)).andExpect(status().isForbidden());
+    }
+
+    @Test
+    void attendanceValidatesRosterDateAndDatabaseTenantBoundaries() throws Exception {
+        String groupA = group(tokenA, a, "A");
+        String playerA = player(tokenA, a, groupA);
+        String groupB = group(tokenB, b, "B");
+        String playerB = player(tokenB, b, groupB);
+        String date = LocalDate.now().toString();
+        String path = base(a) + "/groups/" + groupA + "/attendance/" + date;
+
+        mvc.perform(put(path).header("Authorization", tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(attendanceJson(0, playerB, "PRESENT", null)))
+                .andExpect(status().isBadRequest());
+        mvc.perform(put(base(a) + "/groups/" + groupA + "/attendance/" + LocalDate.now().plusDays(1))
+                        .header("Authorization", tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(attendanceJson(0, playerA, "PRESENT", null)))
+                .andExpect(status().isBadRequest());
+        mvc.perform(put(path).header("Authorization", tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"version":0,"records":[
+                                  {"playerId":"%s","status":"PRESENT"},
+                                  {"playerId":"%s","status":"ABSENT"}
+                                ]}
+                                """.formatted(playerA, playerA)))
+                .andExpect(status().isBadRequest());
+
+        mvc.perform(put(path).header("Authorization", tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(attendanceJson(0, playerA, "PRESENT", null)))
+                .andExpect(status().isOk());
+        UUID sessionId = jdbc.queryForObject("select id from attendance_sessions where academy_id = ? and group_id = ?",
+                UUID.class, a.getId(), UUID.fromString(groupA));
+        assertThatThrownBy(() -> jdbc.update("""
+                insert into attendance_records (id, academy_id, session_id, player_id, status)
+                values (?, ?, ?, ?, 'PRESENT')
+                """, UUID.randomUUID(), a.getId(), sessionId, UUID.fromString(playerB)))
+                .isInstanceOf(DataIntegrityViolationException.class)
+                .hasMessageContaining("fk_attendance_record_player");
+        assertThatThrownBy(() -> jdbc.update("""
+                insert into attendance_sessions (id, academy_id, group_id, training_date)
+                values (?, ?, ?, ?)
+                """, UUID.randomUUID(), a.getId(), UUID.fromString(groupB), LocalDate.now().minusDays(2)))
+                .isInstanceOf(DataIntegrityViolationException.class)
+                .hasMessageContaining("fk_attendance_session_group");
+    }
+
+    @Test
     void parentAndUnverifiedStaffCannotAccessRoster() throws Exception {
         String group = group(tokenA, a, "Group");
         String player = player(tokenA, a, group);
@@ -258,5 +365,11 @@ class AcademyRosterTests {
     }
     private String updatePlayer(String group, int version) {
         return "{\"version\":" + version + ",\"details\":" + playerJson(group) + "}";
+    }
+    private String attendanceJson(long version, String playerId, String status, String comment) {
+        String commentJson = comment == null ? "null" : "\"" + comment + "\"";
+        return """
+                {"version":%d,"records":[{"playerId":"%s","status":"%s","comment":%s}]}
+                """.formatted(version, playerId, status, commentJson);
     }
 }

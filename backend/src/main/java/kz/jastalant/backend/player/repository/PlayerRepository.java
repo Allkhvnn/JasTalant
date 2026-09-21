@@ -7,6 +7,7 @@ import org.springframework.data.domain.*;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
 import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 
 public interface PlayerRepository extends Repository<Player, UUID> {
@@ -16,6 +17,7 @@ public interface PlayerRepository extends Repository<Player, UUID> {
     Optional<Player> findByAcademyIdAndId(UUID academyId, UUID id);
     Page<Player> findAllByAcademyId(UUID academyId, Pageable pageable);
     Page<Player> findAllByAcademyIdAndGroupId(UUID academyId, UUID groupId, Pageable pageable);
+    List<Player> findAllByAcademyIdAndGroupIdOrderByFullNameAscIdAsc(UUID academyId, UUID groupId);
     @Query("""
             select p from Player p where p.academyId = :academyId
             and exists (

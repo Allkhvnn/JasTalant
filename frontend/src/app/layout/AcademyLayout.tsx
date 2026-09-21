@@ -3,6 +3,7 @@ import { useAcademy } from '../../entities/academy/model/useAcademy'
 
 export function AcademyLayout() {
   const { academy } = useAcademy()
+  const canManage = academy.roles.includes('ADMIN')
 
   return (
     <section className="academy-workspace">
@@ -18,7 +19,8 @@ export function AcademyLayout() {
           <NavLink end to="/academy">Обзор</NavLink>
           <NavLink to="/academy/groups">Группы</NavLink>
           <NavLink to="/academy/players">Игроки</NavLink>
-          <NavLink to="/academy/invitations">Приглашения</NavLink>
+          <NavLink to="/academy/attendance">Посещаемость</NavLink>
+          {canManage && <NavLink to="/academy/invitations">Приглашения</NavLink>}
         </nav>
       </aside>
       <div className="academy-content">

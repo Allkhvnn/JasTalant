@@ -9,6 +9,7 @@ export function AcademyProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AcademyContextValue | null>(
     () => {
       const membership = academies.find((item) => item.roles.includes('ADMIN'))
+        ?? academies.find((item) => item.roles.includes('COACH'))
       return membership && token
         ? {
             academy: {
@@ -33,20 +34,8 @@ export function AcademyProvider({ children }: { children: ReactNode }) {
         <div className="empty-state">
           <p className="eyebrow">Доступ к CRM</p>
           <h1>Академия недоступна.</h1>
-          <p>Для этого аккаунта пока нет роли администратора в академии.</p>
-          <Link className="button button--secondary" to="/application">Проверить заявку</Link>
-        </div>
-      </section>
-    )
-  }
-
-  if (!value.academy.roles.includes('ADMIN')) {
-    return (
-      <section className="centered-page">
-        <div className="empty-state">
-          <p className="eyebrow">Доступ к CRM</p>
-          <h1>Нужна роль администратора.</h1>
-          <p>Панель для вашей роли будет доступна в отдельном рабочем пространстве.</p>
+          <p>Для этого аккаунта пока нет роли администратора или тренера.</p>
+          <Link className="button button--secondary" to="/dashboard">Вернуться в кабинет</Link>
         </div>
       </section>
     )

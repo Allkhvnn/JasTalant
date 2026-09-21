@@ -12,6 +12,7 @@ type AcademyStats = {
 
 export function AcademyOverviewPage() {
   const { academy, token } = useAcademy()
+  const canManage = academy.roles.includes('ADMIN')
   const [stats, setStats] = useState<AcademyStats | null>(null)
   const [error, setError] = useState('')
 
@@ -39,7 +40,9 @@ export function AcademyOverviewPage() {
         <div>
           <p className="eyebrow">Рабочее пространство</p>
           <h1>{academy.name}</h1>
-          <p>Настройте структуру академии перед приглашением тренеров и родителей.</p>
+          <p>{canManage
+            ? 'Управляйте составом, тренерами и посещаемостью академии.'
+            : 'Работайте с назначенными группами и отмечайте посещаемость игроков.'}</p>
         </div>
       </div>
 
@@ -58,18 +61,22 @@ export function AcademyOverviewPage() {
         </Link>
         <div className="metric-card metric-card--muted">
           <span>Роль</span>
-          <strong>ADMIN</strong>
-          <small>Управление академией</small>
+          <strong>{canManage ? 'ADMIN' : 'COACH'}</strong>
+          <small>{canManage ? 'Управление академией' : 'Работа с группами'}</small>
         </div>
       </div>
 
       <div className="setup-card">
         <div>
-          <p className="eyebrow">Быстрый старт</p>
-          <h2>Сначала создайте группы, затем добавьте игроков.</h2>
-          <p>После формирования состава можно будет приглашать тренеров и назначать их на группы.</p>
+          <p className="eyebrow">{canManage ? 'Быстрый старт' : 'Рабочий день'}</p>
+          <h2>{canManage ? 'Создайте группы и добавьте игроков.' : 'Откройте журнал своей группы.'}</h2>
+          <p>{canManage
+            ? 'После формирования состава приглашайте тренеров и назначайте их на группы.'
+            : 'Выберите группу и дату, затем отметьте присутствующих и отсутствующих игроков.'}</p>
         </div>
-        <Link className="button" to="/academy/groups">Создать первую группу</Link>
+        <Link className="button" to={canManage ? '/academy/groups' : '/academy/attendance'}>
+          {canManage ? 'Открыть группы' : 'Отметить посещаемость'}
+        </Link>
       </div>
     </div>
   )

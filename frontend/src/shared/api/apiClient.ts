@@ -28,6 +28,11 @@ const translatedDetails: Record<string, string> = {
   'Invitation has expired': 'Срок действия приглашения истёк.',
   'An account already exists; sign in to accept the invitation': 'Аккаунт с этим email уже существует. Войдите, чтобы принять приглашение.',
   'Invitation belongs to another email address': 'Приглашение предназначено для другого email.',
+  'The group has no players': 'В группе пока нет игроков.',
+  'Each player can be marked only once': 'Игрок не может встречаться в ведомости дважды.',
+  'Attendance must include every player in the group': 'Обновите ведомость: состав группы изменился.',
+  'Attendance cannot be recorded for a future date': 'Нельзя отметить посещаемость на будущую дату.',
+  'Attendance has changed; reload it before saving': 'Ведомость уже изменена. Обновите страницу и повторите сохранение.',
   'Invalid request content.': 'Проверьте заполнение полей формы.',
   FORBIDDEN: 'У вас недостаточно прав для этого действия.',
 }

@@ -3,8 +3,10 @@ import { useAuth } from '../../features/auth/model/useAuth'
 import { BrandMark } from '../../shared/ui/BrandMark'
 
 export function AppLayout() {
-  const { account, isAuthenticated, signOut } = useAuth()
+  const { account, academies, isAuthenticated, signOut } = useAuth()
   const navigate = useNavigate()
+  const hasStaffAccess = academies.some((academy) =>
+    academy.roles.includes('ADMIN') || academy.roles.includes('COACH'))
 
   const handleSignOut = () => {
     signOut()
@@ -24,8 +26,9 @@ export function AppLayout() {
                 <NavLink to="/platform/applications">Заявки</NavLink>
               ) : (
                 <>
-                  <NavLink to="/academy">CRM</NavLink>
-                  <NavLink to="/application">Заявка</NavLink>
+                  {hasStaffAccess && <NavLink to="/academy">CRM</NavLink>}
+                  {!academies.length && <NavLink to="/application">Заявка</NavLink>}
+                  <NavLink to="/dashboard">Кабинет</NavLink>
                 </>
               )}
               <span className="topbar__account">{account?.fullName || 'Профиль'}</span>

@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from '../features/auth/model/AuthProvider'
 import { AcademyProvider } from '../entities/academy/model/AcademyProvider'
+import { useAcademy } from '../entities/academy/model/useAcademy'
 import { useAuth } from '../features/auth/model/useAuth'
 import { ApplicationPage } from '../pages/application/ApplicationPage'
 import { DashboardPage } from '../pages/dashboard/DashboardPage'
@@ -17,6 +18,7 @@ import { GroupsPage } from '../pages/groups/GroupsPage'
 import { PlayersPage } from '../pages/players/PlayersPage'
 import { InvitationsPage } from '../pages/invitations/InvitationsPage'
 import { AcceptInvitationPage } from '../pages/accept-invitation/AcceptInvitationPage'
+import { AttendancePage } from '../pages/attendance/AttendancePage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, loading } = useAuth()
@@ -47,6 +49,14 @@ function SuperAdminRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/dashboard" replace />
   }
 
+  return children
+}
+
+function AcademyAdminRoute({ children }: { children: React.ReactNode }) {
+  const { academy } = useAcademy()
+  if (!academy.roles.includes('ADMIN')) {
+    return <Navigate to="/academy/attendance" replace />
+  }
   return children
 }
 
@@ -98,7 +108,8 @@ function App() {
               <Route index element={<AcademyOverviewPage />} />
               <Route path="groups" element={<GroupsPage />} />
               <Route path="players" element={<PlayersPage />} />
-              <Route path="invitations" element={<InvitationsPage />} />
+              <Route path="attendance" element={<AttendancePage />} />
+              <Route path="invitations" element={<AcademyAdminRoute><InvitationsPage /></AcademyAdminRoute>} />
             </Route>
             <Route path="*" element={<NotFoundPage />} />
           </Route>

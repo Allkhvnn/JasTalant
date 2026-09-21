@@ -20,6 +20,7 @@ const PAGE_SIZE = 20
 
 export function GroupsPage() {
   const { academy, token } = useAcademy()
+  const canManage = academy.roles.includes('ADMIN')
   const [result, setResult] = useState<PageResponse<AcademyGroup> | null>(null)
   const [page, setPage] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -38,7 +39,7 @@ export function GroupsPage() {
     let cancelled = false
     Promise.all([
       getGroups(token, academy.id, page, PAGE_SIZE),
-      getAcademyMembers(token, academy.id, 'COACH'),
+      canManage ? getAcademyMembers(token, academy.id, 'COACH') : Promise.resolve([]),
     ])
       .then(([nextResult, nextCoaches]) => {
         if (!cancelled) {
@@ -56,7 +57,7 @@ export function GroupsPage() {
     return () => {
       cancelled = true
     }
-  }, [academy.id, page, reloadKey, token])
+  }, [academy.id, canManage, page, reloadKey, token])
 
   useEffect(() => {
     if (!editor) return
@@ -190,9 +191,11 @@ export function GroupsPage() {
           <h1>Группы</h1>
           <p>Создавайте возрастные группы и готовьте их к назначению тренеров.</p>
         </div>
-        <button className="button" type="button" onClick={() => setEditor('new')}>
-          Добавить группу
-        </button>
+        {canManage && (
+          <button className="button" type="button" onClick={() => setEditor('new')}>
+            Добавить группу
+          </button>
+        )}
       </div>
 
       {error && <div className="alert alert--error" role="alert">{error}</div>}
@@ -211,40 +214,49 @@ export function GroupsPage() {
                 <p>Категория: {group.ageCategory}</p>
               </div>
               <div className="management-card__actions">
-                <button
-                  className="button button--secondary button--small"
-                  type="button"
-                  disabled={Boolean(actionId)}
-                  onClick={() => void openCoachEditor(group)}
-                >
-                  Тренеры
-                </button>
-                <button
-                  className="button button--secondary button--small"
-                  type="button"
-                  disabled={Boolean(actionId)}
-                  onClick={() => setEditor(group)}
-                >
-                  Изменить
-                </button>
-                <button
-                  className="icon-button icon-button--danger"
-                  type="button"
-                  aria-label={`Удалить группу ${group.name}`}
-                  disabled={Boolean(actionId)}
-                  onClick={() => void handleDelete(group)}
-                >
-                  ×
-                </button>
+                <Link className="button button--secondary button--small" to={`/academy/attendance?groupId=${group.id}`}>
+                  Посещаемость
+                </Link>
+                {canManage && (
+                  <>
+                    <button
+                      className="button button--secondary button--small"
+                      type="button"
+                      disabled={Boolean(actionId)}
+                      onClick={() => void openCoachEditor(group)}
+                    >
+                      Тренеры
+                    </button>
+                    <button
+                      className="button button--secondary button--small"
+                      type="button"
+                      disabled={Boolean(actionId)}
+                      onClick={() => setEditor(group)}
+                    >
+                      Изменить
+                    </button>
+                    <button
+                      className="icon-button icon-button--danger"
+                      type="button"
+                      aria-label={`Удалить группу ${group.name}`}
+                      disabled={Boolean(actionId)}
+                      onClick={() => void handleDelete(group)}
+                    >
+                      ×
+                    </button>
+                  </>
+                )}
               </div>
             </article>
           ))}
         </div>
       ) : (
         <div className="list-state">
-          <strong>Групп пока нет</strong>
-          <span>Создайте первую группу, чтобы затем добавить в неё игроков.</span>
-          <button className="button" type="button" onClick={() => setEditor('new')}>Создать группу</button>
+          <strong>{canManage ? 'Групп пока нет' : 'Нет назначенных групп'}</strong>
+          <span>{canManage
+            ? 'Создайте первую группу, чтобы затем добавить в неё игроков.'
+            : 'Администратор академии должен назначить вас тренером группы.'}</span>
+          {canManage && <button className="button" type="button" onClick={() => setEditor('new')}>Создать группу</button>}
         </div>
       )}
 
@@ -260,7 +272,7 @@ export function GroupsPage() {
         </nav>
       )}
 
-      {editor && (
+      {canManage && editor && (
         <div
           className="dialog-backdrop"
           role="presentation"
@@ -297,7 +309,7 @@ export function GroupsPage() {
         </div>
       )}
 
-      {coachEditor && (
+      {canManage && coachEditor && (
         <div
           className="dialog-backdrop"
           role="presentation"
