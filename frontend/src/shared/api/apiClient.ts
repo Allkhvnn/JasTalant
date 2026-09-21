@@ -33,6 +33,8 @@ const translatedDetails: Record<string, string> = {
   'Attendance must include every player in the group': 'Обновите ведомость: состав группы изменился.',
   'Attendance cannot be recorded for a future date': 'Нельзя отметить посещаемость на будущую дату.',
   'Attendance has changed; reload it before saving': 'Ведомость уже изменена. Обновите страницу и повторите сохранение.',
+  'Player not found': 'Игрок не найден или у вас нет доступа к его данным.',
+  'Parent access required': 'Для этого раздела нужна роль родителя.',
   'Invalid request content.': 'Проверьте заполнение полей формы.',
   FORBIDDEN: 'У вас недостаточно прав для этого действия.',
 }

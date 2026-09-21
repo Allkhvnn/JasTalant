@@ -7,6 +7,7 @@ export function AppLayout() {
   const navigate = useNavigate()
   const hasStaffAccess = academies.some((academy) =>
     academy.roles.includes('ADMIN') || academy.roles.includes('COACH'))
+  const hasParentAccess = academies.some((academy) => academy.roles.includes('PARENT'))
 
   const handleSignOut = () => {
     signOut()
@@ -27,6 +28,7 @@ export function AppLayout() {
               ) : (
                 <>
                   {hasStaffAccess && <NavLink to="/academy">CRM</NavLink>}
+                  {hasParentAccess && <NavLink to="/parent">Дети</NavLink>}
                   {!academies.length && <NavLink to="/application">Заявка</NavLink>}
                   <NavLink to="/dashboard">Кабинет</NavLink>
                 </>

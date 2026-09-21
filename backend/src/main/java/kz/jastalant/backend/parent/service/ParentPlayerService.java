@@ -8,6 +8,8 @@ import kz.jastalant.backend.common.service.PageRequests;
 import kz.jastalant.backend.membership.entity.AcademyRole;
 import kz.jastalant.backend.membership.repository.AcademyMembershipRepository;
 import kz.jastalant.backend.parent.entity.ParentPlayer;
+import kz.jastalant.backend.parent.dto.ChildAttendanceResponse;
+import kz.jastalant.backend.parent.repository.ParentAttendanceRepository;
 import kz.jastalant.backend.parent.repository.ParentPlayerRepository;
 import kz.jastalant.backend.player.dto.PlayerResponse;
 import kz.jastalant.backend.player.mapper.PlayerMapper;
@@ -23,6 +25,7 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public class ParentPlayerService {
     private final ParentPlayerRepository parentPlayers;
+    private final ParentAttendanceRepository attendance;
     private final PlayerRepository players;
     private final AcademyMembershipRepository memberships;
     private final AcademyPermissionService permissions;
@@ -39,6 +42,15 @@ public class ParentPlayerService {
         return parentPlayers.findPlayer(academyId, scope.membershipId(), playerId)
                 .map(PlayerMapper::toResponse)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "Player not found"));
+    }
+
+    public PageResponse<ChildAttendanceResponse> myChildAttendance(
+            UUID actor, UUID academyId, UUID playerId, int page, int size) {
+        var scope = requireParent(actor, academyId);
+        parentPlayers.findPlayer(academyId, scope.membershipId(), playerId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "Player not found"));
+        var result = attendance.findHistory(academyId, playerId, PageRequests.of(page, size));
+        return new PageResponse<>(result.getContent(), page, size, result.getTotalElements());
     }
 
     @Transactional

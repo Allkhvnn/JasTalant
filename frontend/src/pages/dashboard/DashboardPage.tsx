@@ -19,6 +19,7 @@ export function DashboardPage() {
 
   const staffMembership = academies.find((academy) =>
     academy.roles.includes('ADMIN') || academy.roles.includes('COACH'))
+  const parentMembership = academies.find((academy) => academy.roles.includes('PARENT'))
   const isCoach = staffMembership?.roles.includes('COACH') && !staffMembership.roles.includes('ADMIN')
 
   if (staffMembership) {
@@ -33,6 +34,7 @@ export function DashboardPage() {
           <Link className="button" to={isCoach ? '/academy/attendance' : '/academy'}>
             {isCoach ? 'Открыть посещаемость' : 'Открыть CRM'}
           </Link>
+          {parentMembership && <Link className="button button--secondary" to="/parent">Данные детей</Link>}
         </div>
       </section>
     )
@@ -43,11 +45,13 @@ export function DashboardPage() {
       <div className="empty-state">
         <p className="eyebrow">Рабочее пространство</p>
         <h1>Добро пожаловать, {account?.fullName || 'пользователь'}.</h1>
-        <p>{academies.some((academy) => academy.roles.includes('PARENT'))
-          ? 'Доступ родителя подключён. Кабинет ребёнка будет следующим этапом разработки.'
+        <p>{parentMembership
+          ? `Просматривайте данные детей в академии «${parentMembership.academyName}».`
           : 'Заявка на подключение академии ожидает рассмотрения или ещё не создана.'}</p>
         <div className="hero__actions">
-          <Link className="button button--secondary" to="/application">Посмотреть заявку</Link>
+          {parentMembership
+            ? <Link className="button" to="/parent">Открыть данные детей</Link>
+            : <Link className="button button--secondary" to="/application">Посмотреть заявку</Link>}
         </div>
       </div>
     </section>

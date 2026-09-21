@@ -1,6 +1,7 @@
 package kz.jastalant.backend.parent.controller;
 
 import kz.jastalant.backend.common.dto.PageResponse;
+import kz.jastalant.backend.parent.dto.ChildAttendanceResponse;
 import kz.jastalant.backend.parent.service.ParentPlayerService;
 import kz.jastalant.backend.player.dto.PlayerResponse;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,17 @@ public class ParentPlayerController {
     public PlayerResponse myChild(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID academyId,
                                   @PathVariable UUID playerId) {
         return parentPlayers.myChild(UUID.fromString(jwt.getSubject()), academyId, playerId);
+    }
+
+    @GetMapping("/parent/players/{playerId}/attendance")
+    public PageResponse<ChildAttendanceResponse> myChildAttendance(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable UUID academyId,
+            @PathVariable UUID playerId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return parentPlayers.myChildAttendance(
+                UUID.fromString(jwt.getSubject()), academyId, playerId, page, size);
     }
 
     @PutMapping("/parents/{parentUserId}/players/{playerId}")

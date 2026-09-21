@@ -65,6 +65,7 @@ Email берётся из приглашения и считается подт�
 |---|---|---|---|
 | GET | `/api/academies/{academyId}/parent/players` | PARENT | Только свои дети |
 | GET | `/api/academies/{academyId}/parent/players/{playerId}` | PARENT | Карточка своего ребёнка |
+| GET | `/api/academies/{academyId}/parent/players/{playerId}/attendance` | PARENT | История посещаемости ребёнка |
 | PUT | `/api/academies/{academyId}/parents/{userId}/players/{playerId}` | ADMIN | Добавить связь |
 | DELETE | `/api/academies/{academyId}/parents/{userId}/players/{playerId}` | ADMIN | Удалить связь |
 
@@ -72,6 +73,9 @@ Email берётся из приглашения и считается подт�
 идемпотентно. Родитель не получает доступ к общему `/players` и не может увидеть
 чужого ребёнка по известному UUID. Удаление роли PARENT, членства или игрока
 удаляет соответствующую связь на уровне БД.
+
+История посещаемости поддерживает `page` и `size`, выводится от новых тренировок
+к старым и содержит дату, группу, статус и комментарий тренера.
 
 В MVP связь создаёт администратор. Подтверждение вторым родителем, документы об
 опеке и журнал изменений пока не реализованы.

@@ -73,6 +73,8 @@ class InvitationTests {
     void fixtures() {
         jdbc.execute("delete from parent_players");
         jdbc.execute("delete from academy_invitations");
+        jdbc.execute("delete from attendance_records");
+        jdbc.execute("delete from attendance_sessions");
         jdbc.execute("delete from players");
         jdbc.execute("delete from training_groups");
         jdbc.execute("delete from academy_applications");
@@ -129,6 +131,31 @@ class InvitationTests {
                 .andExpect(jsonPath("$.items[0].id").value(childA.getId().toString()));
         mvc.perform(get(base(academyA) + "/parent/players/" + childA.getId()).header("Authorization", parentToken))
                 .andExpect(status().isOk());
+
+        UUID attendanceSession = UUID.randomUUID();
+        jdbc.update("""
+                insert into attendance_sessions (id, academy_id, group_id, training_date)
+                values (?, ?, ?, ?)
+                """, attendanceSession, academyA.getId(), childA.getGroupId(), LocalDate.now().minusDays(1));
+        jdbc.update("""
+                insert into attendance_records (id, academy_id, session_id, player_id, status, comment)
+                values (?, ?, ?, ?, 'PRESENT', 'Хорошая тренировка')
+                """, UUID.randomUUID(), academyA.getId(), attendanceSession, childA.getId());
+        jdbc.update("""
+                insert into attendance_records (id, academy_id, session_id, player_id, status)
+                values (?, ?, ?, ?, 'ABSENT')
+                """, UUID.randomUUID(), academyA.getId(), attendanceSession, otherChildA.getId());
+
+        mvc.perform(get(base(academyA) + "/parent/players/" + childA.getId() + "/attendance")
+                        .header("Authorization", parentToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.items[0].status").value("PRESENT"))
+                .andExpect(jsonPath("$.items[0].groupName").value("A U10"))
+                .andExpect(jsonPath("$.items[0].comment").value("Хорошая тренировка"));
+        mvc.perform(get(base(academyA) + "/parent/players/" + otherChildA.getId() + "/attendance")
+                        .header("Authorization", parentToken))
+                .andExpect(status().isNotFound());
         mvc.perform(get(base(academyA) + "/parent/players/" + otherChildA.getId()).header("Authorization", parentToken))
                 .andExpect(status().isNotFound());
         mvc.perform(get(base(academyB) + "/parent/players/" + childB.getId()).header("Authorization", parentToken))
