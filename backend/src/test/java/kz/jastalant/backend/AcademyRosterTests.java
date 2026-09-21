@@ -167,6 +167,25 @@ class AcademyRosterTests {
     }
 
     @Test
+    void adminCanListCoachesOnlyInsideOwnAcademy() throws Exception {
+        mvc.perform(get(base(a) + "/members?role=COACH").header("Authorization", tokenA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].userId").value(coach.getId().toString()))
+                .andExpect(jsonPath("$[0].fullName").value(coach.getFullName()))
+                .andExpect(jsonPath("$[0].email").value(coach.getEmail()))
+                .andExpect(jsonPath("$[0].roles.length()").value(2));
+        mvc.perform(get(base(b) + "/members?role=COACH").header("Authorization", tokenA))
+                .andExpect(status().isNotFound());
+        mvc.perform(get(base(a) + "/members?role=COACH").header("Authorization", tokenCoach))
+                .andExpect(status().isForbidden());
+        mvc.perform(get(base(a) + "/members?role=COACH"))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(get(base(a) + "/members?role=UNKNOWN").header("Authorization", tokenA))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void parentAndUnverifiedStaffCannotAccessRoster() throws Exception {
         String group = group(tokenA, a, "Group");
         String player = player(tokenA, a, group);

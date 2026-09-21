@@ -32,6 +32,7 @@ public class SecurityConfiguration {
                         .requestMatchers("/api/platform/**").hasRole("SUPER_ADMIN")
                         .requestMatchers("/api/academies/*/groups", "/api/academies/*/groups/**",
                                 "/api/academies/*/players", "/api/academies/*/players/**",
+                                "/api/academies/*/members",
                                 "/api/academies/*/invitations", "/api/academies/*/invitations/**",
                                 "/api/academies/*/parent/**", "/api/academies/*/parents/**",
                                 "/api/invitations/accept").authenticated()

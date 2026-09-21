@@ -1,12 +1,18 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { useAcademy } from '../../entities/academy/model/useAcademy'
 import {
+  assignGroupCoach,
   createGroup,
   deleteGroup,
+  getGroupCoaches,
   getGroups,
+  unassignGroupCoach,
   updateGroup,
 } from '../../entities/group/api/groupApi'
-import type { AcademyGroup, GroupPayload } from '../../entities/group/model/types'
+import type { AcademyGroup, GroupCoach, GroupPayload } from '../../entities/group/model/types'
+import { getAcademyMembers } from '../../entities/membership/api/membershipApi'
+import type { AcademyMember } from '../../entities/membership/model/types'
 import { errorMessage } from '../../shared/api/apiClient'
 import type { PageResponse } from '../../shared/api/types'
 
@@ -19,15 +25,26 @@ export function GroupsPage() {
   const [loading, setLoading] = useState(true)
   const [reloadKey, setReloadKey] = useState(0)
   const [editor, setEditor] = useState<AcademyGroup | 'new' | null>(null)
+  const [coachEditor, setCoachEditor] = useState<AcademyGroup | null>(null)
+  const [coaches, setCoaches] = useState<AcademyMember[]>([])
+  const [assignedCoaches, setAssignedCoaches] = useState<GroupCoach[]>([])
+  const [coachesLoading, setCoachesLoading] = useState(false)
+  const [coachActionId, setCoachActionId] = useState<string | null>(null)
   const [actionId, setActionId] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
 
   useEffect(() => {
     let cancelled = false
-    getGroups(token, academy.id, page, PAGE_SIZE)
-      .then((nextResult) => {
-        if (!cancelled) setResult(nextResult)
+    Promise.all([
+      getGroups(token, academy.id, page, PAGE_SIZE),
+      getAcademyMembers(token, academy.id, 'COACH'),
+    ])
+      .then(([nextResult, nextCoaches]) => {
+        if (!cancelled) {
+          setResult(nextResult)
+          setCoaches(nextCoaches)
+        }
       })
       .catch((requestError: unknown) => {
         if (!cancelled) setError(errorMessage(requestError))
@@ -49,6 +66,15 @@ export function GroupsPage() {
     document.addEventListener('keydown', closeOnEscape)
     return () => document.removeEventListener('keydown', closeOnEscape)
   }, [actionId, editor])
+
+  useEffect(() => {
+    if (!coachEditor) return
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !coachActionId) setCoachEditor(null)
+    }
+    document.addEventListener('keydown', closeOnEscape)
+    return () => document.removeEventListener('keydown', closeOnEscape)
+  }, [coachActionId, coachEditor])
 
   const reload = () => {
     setLoading(true)
@@ -116,6 +142,44 @@ export function GroupsPage() {
     }
   }
 
+  const openCoachEditor = async (group: AcademyGroup) => {
+    setCoachEditor(group)
+    setAssignedCoaches([])
+    setCoachesLoading(true)
+    setError('')
+    setNotice('')
+    try {
+      setAssignedCoaches(await getGroupCoaches(token, academy.id, group.id))
+    } catch (requestError) {
+      setError(errorMessage(requestError))
+    } finally {
+      setCoachesLoading(false)
+    }
+  }
+
+  const handleCoachToggle = async (coach: AcademyMember) => {
+    if (!coachEditor) return
+    const assigned = assignedCoaches.some((item) => item.userId === coach.userId)
+    setCoachActionId(coach.userId)
+    setError('')
+    setNotice('')
+    try {
+      if (assigned) {
+        await unassignGroupCoach(token, academy.id, coachEditor.id, coach.userId)
+        setAssignedCoaches((current) => current.filter((item) => item.userId !== coach.userId))
+        setNotice(`${coach.fullName} снят с группы «${coachEditor.name}».`)
+      } else {
+        await assignGroupCoach(token, academy.id, coachEditor.id, coach.userId)
+        setAssignedCoaches((current) => [...current, { userId: coach.userId, fullName: coach.fullName }])
+        setNotice(`${coach.fullName} назначен на группу «${coachEditor.name}».`)
+      }
+    } catch (requestError) {
+      setError(errorMessage(requestError))
+    } finally {
+      setCoachActionId(null)
+    }
+  }
+
   const totalPages = result ? Math.ceil(result.totalElements / result.size) : 0
 
   return (
@@ -147,6 +211,14 @@ export function GroupsPage() {
                 <p>Категория: {group.ageCategory}</p>
               </div>
               <div className="management-card__actions">
+                <button
+                  className="button button--secondary button--small"
+                  type="button"
+                  disabled={Boolean(actionId)}
+                  onClick={() => void openCoachEditor(group)}
+                >
+                  Тренеры
+                </button>
                 <button
                   className="button button--secondary button--small"
                   type="button"
@@ -205,6 +277,7 @@ export function GroupsPage() {
               <button className="dialog__close" type="button" aria-label="Закрыть" onClick={() => setEditor(null)}>×</button>
             </div>
             <form key={editor === 'new' ? 'new' : editor.id} onSubmit={handleSave}>
+              {error && <div className="alert alert--error" role="alert">{error}</div>}
               <label className="field">
                 <span>Название группы</span>
                 <input name="name" defaultValue={editor === 'new' ? '' : editor.name} maxLength={200} required autoFocus />
@@ -223,7 +296,63 @@ export function GroupsPage() {
           </div>
         </div>
       )}
+
+      {coachEditor && (
+        <div
+          className="dialog-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !coachActionId) setCoachEditor(null)
+          }}
+        >
+          <div className="dialog" role="dialog" aria-modal="true" aria-labelledby="coach-dialog-title">
+            <div className="dialog__heading">
+              <div>
+                <p className="eyebrow">Состав группы</p>
+                <h2 id="coach-dialog-title">Тренеры · {coachEditor.name}</h2>
+              </div>
+              <button className="dialog__close" type="button" aria-label="Закрыть" onClick={() => setCoachEditor(null)}>×</button>
+            </div>
+
+            {error && <div className="alert alert--error" role="alert">{error}</div>}
+            {notice && <div className="alert alert--success" role="status">{notice}</div>}
+            {coachesLoading ? (
+              <div className="inline-note">Загружаем назначения…</div>
+            ) : coaches.length ? (
+              <div className="coach-assignment-list">
+                {coaches.map((coach) => {
+                  const assigned = assignedCoaches.some((item) => item.userId === coach.userId)
+                  return (
+                    <label className={assigned ? 'coach-assignment coach-assignment--selected' : 'coach-assignment'} key={coach.userId}>
+                      <input
+                        type="checkbox"
+                        checked={assigned}
+                        disabled={Boolean(coachActionId)}
+                        onChange={() => void handleCoachToggle(coach)}
+                      />
+                      <span>
+                        <strong>{coach.fullName}</strong>
+                        <small>{coach.email}</small>
+                      </span>
+                      <em>{coachActionId === coach.userId ? 'Сохраняем…' : assigned ? 'Назначен' : 'Не назначен'}</em>
+                    </label>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="list-state list-state--compact">
+                <strong>Нет доступных тренеров</strong>
+                <span>Сначала пригласите тренера и дождитесь принятия приглашения.</span>
+                <Link className="button" to="/academy/invitations" onClick={() => setCoachEditor(null)}>Перейти к приглашениям</Link>
+              </div>
+            )}
+
+            <div className="dialog__actions">
+              <button className="button button--secondary" type="button" disabled={Boolean(coachActionId)} onClick={() => setCoachEditor(null)}>Готово</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
-

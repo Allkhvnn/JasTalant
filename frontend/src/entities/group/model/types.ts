@@ -11,3 +11,7 @@ export type GroupPayload = {
   ageCategory: string
 }
 
+export type GroupCoach = {
+  userId: string
+  fullName: string
+}
