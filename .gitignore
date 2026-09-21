@@ -1,0 +1,26 @@
+# Local tooling and IDE metadata
+.gradle-cache/
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Secrets and local environment files
+**/.env
+**/.env.*
+!**/.env.example
+
+# Backend build output
+backend/.gradle/
+backend/build/
+backend/out/
+
+# Frontend dependencies and build output
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/coverage/
+frontend/*.local
+frontend/*.log
+
