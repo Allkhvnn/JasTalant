@@ -18,6 +18,7 @@ export function AcademyLayout() {
           <NavLink end to="/academy">Обзор</NavLink>
           <NavLink to="/academy/groups">Группы</NavLink>
           <NavLink to="/academy/players">Игроки</NavLink>
+          <NavLink to="/academy/invitations">Приглашения</NavLink>
         </nav>
       </aside>
       <div className="academy-content">
@@ -26,4 +27,3 @@ export function AcademyLayout() {
     </section>
   )
 }
-

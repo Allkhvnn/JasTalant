@@ -21,6 +21,13 @@ const translatedDetails: Record<string, string> = {
   'Application not found': 'Заявка не найдена.',
   'The record has changed; reload it before saving': 'Данные уже были изменены. Обновите страницу и повторите попытку.',
   'The request conflicts with existing data': 'Операцию нельзя выполнить из-за связанных данных.',
+  'An active invitation already exists for this email': 'Для этого email уже есть активное приглашение.',
+  'Only pending invitations can be revoked': 'Можно отозвать только активное приглашение.',
+  'Invalid invitation token': 'Ссылка приглашения недействительна.',
+  'Invitation has already been used or revoked': 'Приглашение уже принято или отозвано.',
+  'Invitation has expired': 'Срок действия приглашения истёк.',
+  'An account already exists; sign in to accept the invitation': 'Аккаунт с этим email уже существует. Войдите, чтобы принять приглашение.',
+  'Invitation belongs to another email address': 'Приглашение предназначено для другого email.',
   'Invalid request content.': 'Проверьте заполнение полей формы.',
   FORBIDDEN: 'У вас недостаточно прав для этого действия.',
 }

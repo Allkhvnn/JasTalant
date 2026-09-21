@@ -15,6 +15,8 @@ import { AcademyLayout } from './layout/AcademyLayout'
 import { AcademyOverviewPage } from '../pages/academy-overview/AcademyOverviewPage'
 import { GroupsPage } from '../pages/groups/GroupsPage'
 import { PlayersPage } from '../pages/players/PlayersPage'
+import { InvitationsPage } from '../pages/invitations/InvitationsPage'
+import { AcceptInvitationPage } from '../pages/accept-invitation/AcceptInvitationPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, loading } = useAuth()
@@ -58,6 +60,7 @@ function App() {
             <Route path="login" element={<LoginPage />} />
             <Route path="register" element={<RegisterPage />} />
             <Route path="verify-email" element={<VerifyEmailPage />} />
+            <Route path="accept-invitation" element={<AcceptInvitationPage />} />
             <Route
               path="application"
               element={
@@ -95,6 +98,7 @@ function App() {
               <Route index element={<AcademyOverviewPage />} />
               <Route path="groups" element={<GroupsPage />} />
               <Route path="players" element={<PlayersPage />} />
+              <Route path="invitations" element={<InvitationsPage />} />
             </Route>
             <Route path="*" element={<NotFoundPage />} />
           </Route>

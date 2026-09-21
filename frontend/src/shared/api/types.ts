@@ -21,8 +21,10 @@ export type PageResponse<T> = {
   totalElements: number
 }
 
+export type AcademyRole = 'ADMIN' | 'COACH' | 'PARENT'
+
 export type AcademyMembership = {
   academyId: string
   academyName: string
-  roles: Array<'ADMIN' | 'COACH' | 'PARENT'>
+  roles: AcademyRole[]
 }

@@ -1,11 +1,12 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../features/auth/model/useAuth'
 import { errorMessage } from '../../shared/api/apiClient'
 
 export function LoginPage() {
   const { signIn } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
@@ -20,7 +21,11 @@ export function LoginPage() {
         email: String(data.get('email')).trim(),
         password: String(data.get('password')),
       })
-      navigate('/dashboard')
+      const requestedPath = searchParams.get('returnTo')
+      const destination = requestedPath?.startsWith('/') && !requestedPath.startsWith('//')
+        ? requestedPath
+        : '/dashboard'
+      navigate(destination)
     } catch (requestError) {
       setError(errorMessage(requestError))
     } finally {

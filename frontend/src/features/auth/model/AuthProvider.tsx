@@ -5,6 +5,10 @@ import { getAccount, getMyAcademies, login, type LoginPayload } from '../api/aut
 import { AuthContext, type AuthContextValue } from './AuthContext'
 import { clearSession, readSession, saveSession, type AuthSession } from './session'
 
+function loadProfile(accessToken: string) {
+  return Promise.all([getAccount(accessToken), getMyAcademies(accessToken)])
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<AuthSession | null>(readSession)
   const [account, setAccount] = useState<Account | null>(null)
@@ -19,11 +23,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(false)
   }, [])
 
+  const refreshProfile = useCallback(async () => {
+    if (!session) return
+    const [nextAccount, nextAcademies] = await loadProfile(session.accessToken)
+    setAccount(nextAccount)
+    setAcademies(nextAcademies)
+  }, [session])
+
   useEffect(() => {
     if (!session) return
 
     let cancelled = false
-    Promise.all([getAccount(session.accessToken), getMyAcademies(session.accessToken)])
+    loadProfile(session.accessToken)
       .then(([nextAccount, nextAcademies]) => {
         if (!cancelled) {
           setAccount(nextAccount)
@@ -59,8 +70,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: Boolean(session),
       signIn,
       signOut,
+      refreshProfile,
     }),
-    [account, academies, loading, session, signIn, signOut],
+    [account, academies, loading, refreshProfile, session, signIn, signOut],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
