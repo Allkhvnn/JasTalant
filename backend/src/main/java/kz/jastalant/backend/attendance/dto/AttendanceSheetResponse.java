@@ -8,6 +8,7 @@ public record AttendanceSheetResponse(
         UUID id,
         UUID academyId,
         UUID groupId,
+        UUID trainingId,
         LocalDate trainingDate,
         long version,
         boolean saved,

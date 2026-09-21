@@ -2480,3 +2480,158 @@ footer {
     flex-direction: column;
   }
 }
+
+.schedule-toolbar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(150px, 1fr)) auto;
+  align-items: end;
+  gap: 14px;
+  margin: 24px 0;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.schedule-toolbar label {
+  display: grid;
+  gap: 7px;
+}
+
+.schedule-toolbar label > span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.schedule-toolbar input,
+.schedule-toolbar select {
+  min-width: 0;
+  height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  color: #fff;
+  background: var(--panel);
+}
+
+.schedule-toolbar > span {
+  padding: 0 4px 13px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.schedule-calendar {
+  display: grid;
+  gap: 26px;
+}
+
+.schedule-day > h2 {
+  margin: 0 0 12px;
+  color: #fff;
+  font-size: 18px;
+  text-transform: capitalize;
+}
+
+.schedule-day > div {
+  display: grid;
+  gap: 10px;
+}
+
+.training-card {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 20px;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.training-card--cancelled {
+  opacity: 0.65;
+}
+
+.training-card__time {
+  display: grid;
+  gap: 3px;
+  padding-right: 18px;
+  border-right: 1px solid var(--line);
+}
+
+.training-card__time strong {
+  color: var(--lime);
+  font-size: 22px;
+}
+
+.training-card__time span,
+.training-card__details p,
+.training-card__details > span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.training-card__details h3,
+.training-card__details p {
+  margin: 0 0 4px;
+}
+
+.training-card__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.training-status {
+  padding: 8px 12px;
+  border-radius: 999px;
+  color: #ffb5ae;
+  background: rgba(225, 79, 65, 0.13);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+@media (max-width: 900px) {
+  .schedule-toolbar {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .training-card {
+    grid-template-columns: 76px minmax(0, 1fr);
+  }
+
+  .training-card__actions {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 620px) {
+  .schedule-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .schedule-toolbar > span {
+    padding-bottom: 0;
+  }
+
+  .training-card {
+    grid-template-columns: 1fr;
+  }
+
+  .training-card__time {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 0 0 12px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .training-card__actions {
+    grid-column: auto;
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

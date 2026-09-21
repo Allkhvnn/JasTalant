@@ -6,7 +6,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -17,9 +16,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 @Entity
-@Table(name = "attendance_sessions", uniqueConstraints = @UniqueConstraint(
-        name = "uq_attendance_session_group_date",
-        columnNames = {"academy_id", "group_id", "training_date"}))
+@Table(name = "attendance_sessions")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class AttendanceSession {
@@ -32,6 +29,9 @@ public class AttendanceSession {
 
     @Column(nullable = false, updatable = false)
     private UUID groupId;
+
+    @Column(updatable = false)
+    private UUID trainingId;
 
     @Column(nullable = false, updatable = false)
     private LocalDate trainingDate;
@@ -46,8 +46,13 @@ public class AttendanceSession {
     private Instant updatedAt;
 
     public AttendanceSession(UUID academyId, UUID groupId, LocalDate trainingDate, Instant now) {
+        this(academyId, groupId, null, trainingDate, now);
+    }
+
+    public AttendanceSession(UUID academyId, UUID groupId, UUID trainingId, LocalDate trainingDate, Instant now) {
         this.academyId = academyId;
         this.groupId = groupId;
+        this.trainingId = trainingId;
         this.trainingDate = trainingDate;
         this.createdAt = now;
         this.updatedAt = now;

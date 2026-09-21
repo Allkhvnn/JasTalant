@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import {
   getAttendance,
+  getTrainingAttendance,
   saveAttendance,
+  saveTrainingAttendance,
 } from '../../entities/attendance/api/attendanceApi'
 import type {
   AttendanceSheet,
@@ -57,9 +59,12 @@ export function AttendancePage() {
   const { academy, token } = useAcademy()
   const [searchParams, setSearchParams] = useSearchParams()
   const [requestedGroupId] = useState(() => searchParams.get('groupId') || '')
+  const [requestedTrainingId] = useState(() => searchParams.get('trainingId') || '')
+  const [requestedDate] = useState(() => searchParams.get('date') || localDate())
   const [groups, setGroups] = useState<AcademyGroup[]>([])
   const [groupId, setGroupId] = useState('')
-  const [trainingDate, setTrainingDate] = useState(localDate)
+  const [trainingId, setTrainingId] = useState(requestedTrainingId)
+  const [trainingDate, setTrainingDate] = useState(requestedDate)
   const [sheet, setSheet] = useState<AttendanceSheet | null>(null)
   const [marks, setMarks] = useState<Record<string, DraftMark>>({})
   const [groupsLoading, setGroupsLoading] = useState(true)
@@ -95,7 +100,10 @@ export function AttendancePage() {
   useEffect(() => {
     if (!groupId) return
     let cancelled = false
-    getAttendance(token, academy.id, groupId, trainingDate)
+    const request = trainingId
+      ? getTrainingAttendance(token, academy.id, trainingId)
+      : getAttendance(token, academy.id, groupId, trainingDate)
+    request
       .then((result) => {
         if (!cancelled) {
           setSheet(result)
@@ -111,7 +119,7 @@ export function AttendancePage() {
     return () => {
       cancelled = true
     }
-  }, [academy.id, groupId, token, trainingDate])
+  }, [academy.id, groupId, token, trainingDate, trainingId])
 
   const summary = useMemo(() => {
     const values = Object.values(marks)
@@ -126,6 +134,7 @@ export function AttendancePage() {
     setSheet(null)
     setError('')
     setNotice('')
+    setTrainingId('')
     setGroupId(nextGroupId)
     setSearchParams({ groupId: nextGroupId }, { replace: true })
   }
@@ -136,7 +145,9 @@ export function AttendancePage() {
     setSheet(null)
     setError('')
     setNotice('')
+    setTrainingId('')
     setTrainingDate(nextDate)
+    setSearchParams({ groupId }, { replace: true })
   }
 
   const updateStatus = (playerId: string, status: AttendanceStatus) => {
@@ -161,14 +172,17 @@ export function AttendancePage() {
     setError('')
     setNotice('')
     try {
-      const result = await saveAttendance(token, academy.id, groupId, trainingDate, {
+      const payload = {
         version: sheet.version,
         records: sheet.players.map((player) => ({
           playerId: player.playerId,
           status: marks[player.playerId].status,
           comment: marks[player.playerId].comment.trim() || null,
         })),
-      })
+      }
+      const result = trainingId
+        ? await saveTrainingAttendance(token, academy.id, trainingId, payload)
+        : await saveAttendance(token, academy.id, groupId, trainingDate, payload)
       setSheet(result)
       setMarks(marksFromSheet(result))
       setNotice('Посещаемость сохранена.')
@@ -185,7 +199,7 @@ export function AttendancePage() {
         <div>
           <p className="eyebrow">Тренировочный процесс</p>
           <h1>Посещаемость</h1>
-          <p>Выберите группу и дату, затем отметьте каждого игрока.</p>
+          <p>{trainingId ? 'Ведомость открыта из расписания конкретной тренировки.' : 'Выберите группу и дату, затем отметьте каждого игрока.'}</p>
         </div>
         {sheet?.players.length ? (
           <button className="button" type="button" disabled={saving || sheetLoading} onClick={() => void handleSave()}>
@@ -200,17 +214,18 @@ export function AttendancePage() {
       <div className="attendance-toolbar">
         <label>
           <span>Группа</span>
-          <select value={groupId} disabled={groupsLoading || !groups.length} onChange={(event) => selectGroup(event.target.value)}>
+          <select value={groupId} disabled={Boolean(trainingId) || groupsLoading || !groups.length} onChange={(event) => selectGroup(event.target.value)}>
             {groups.map((group) => <option key={group.id} value={group.id}>{group.name} · {group.ageCategory}</option>)}
           </select>
         </label>
         <label>
           <span>Дата тренировки</span>
-          <input type="date" value={trainingDate} max={localDate()} onChange={(event) => selectDate(event.target.value)} />
+          <input type="date" value={trainingDate} max={localDate()} disabled={Boolean(trainingId)} onChange={(event) => selectDate(event.target.value)} />
         </label>
         <div className={sheet?.saved ? 'sheet-state sheet-state--saved' : 'sheet-state'}>
           {sheet?.saved ? `Сохранено · версия ${sheet.version}` : 'Новая ведомость'}
         </div>
+        {trainingId && <Link className="text-button" to="/academy/schedule">Вернуться в расписание</Link>}
       </div>
 
       {groupsLoading ? (

@@ -15,8 +15,10 @@ public interface AttendanceSessionRepository extends Repository<AttendanceSessio
     AttendanceSession save(AttendanceSession session);
     void flush();
 
-    Optional<AttendanceSession> findByAcademyIdAndGroupIdAndTrainingDate(
+    Optional<AttendanceSession> findByAcademyIdAndGroupIdAndTrainingDateAndTrainingIdIsNull(
             UUID academyId, UUID groupId, LocalDate trainingDate);
+
+    Optional<AttendanceSession> findByAcademyIdAndTrainingId(UUID academyId, UUID trainingId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
@@ -24,9 +26,20 @@ public interface AttendanceSessionRepository extends Repository<AttendanceSessio
             where session.academyId = :academyId
               and session.groupId = :groupId
               and session.trainingDate = :trainingDate
+              and session.trainingId is null
             """)
     Optional<AttendanceSession> lockByAcademyIdAndGroupIdAndTrainingDate(
             @Param("academyId") UUID academyId,
             @Param("groupId") UUID groupId,
             @Param("trainingDate") LocalDate trainingDate);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            select session from AttendanceSession session
+            where session.academyId = :academyId
+              and session.trainingId = :trainingId
+            """)
+    Optional<AttendanceSession> lockByAcademyIdAndTrainingId(
+            @Param("academyId") UUID academyId,
+            @Param("trainingId") UUID trainingId);
 }

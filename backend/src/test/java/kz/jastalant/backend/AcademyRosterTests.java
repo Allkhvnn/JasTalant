@@ -48,6 +48,7 @@ class AcademyRosterTests {
     void fixtures() {
         jdbc.execute("delete from attendance_records");
         jdbc.execute("delete from attendance_sessions");
+        jdbc.execute("delete from scheduled_trainings");
         jdbc.execute("delete from players");
         jdbc.execute("delete from training_groups");
         jdbc.execute("delete from academy_applications");
@@ -331,6 +332,107 @@ class AcademyRosterTests {
     }
 
     @Test
+    void adminManagesScheduleAndCoachSeesOnlyAssignedGroups() throws Exception {
+        String assigned = group(tokenA, a, "Assigned");
+        String other = group(tokenA, a, "Other");
+        var otherCoach = member(a, "other-schedule-coach", AcademyRole.COACH);
+        mvc.perform(put(base(a) + "/groups/" + assigned + "/coaches/" + coach.getId())
+                        .header("Authorization", tokenA)).andExpect(status().isNoContent());
+        mvc.perform(put(base(a) + "/groups/" + other + "/coaches/" + otherCoach.getId())
+                        .header("Authorization", tokenA)).andExpect(status().isNoContent());
+
+        String date = LocalDate.now().plusDays(2).toString();
+        String assignedTraining = training(tokenA, a, assigned, coach.getId(), date, "10:00", "11:30");
+        String otherTraining = training(tokenA, a, other, otherCoach.getId(), date, "12:00", "13:30");
+
+        mvc.perform(get(base(a) + "/trainings?from=" + date + "&to=" + date)
+                        .header("Authorization", tokenCoach))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].id").value(assignedTraining))
+                .andExpect(jsonPath("$[0].coachName").value(coach.getFullName()));
+        mvc.perform(get(base(a) + "/trainings/" + otherTraining).header("Authorization", tokenCoach))
+                .andExpect(status().isNotFound());
+        mvc.perform(get(base(a) + "/trainings?from=" + date + "&to=" + date)
+                        .header("Authorization", tokenParent))
+                .andExpect(status().isForbidden());
+
+        String updated = "{\"version\":0,\"details\":"
+                + trainingJson(assigned, coach.getId(), date, "10:30", "12:00", "CANCELLED") + "}";
+        mvc.perform(put(base(a) + "/trainings/" + assignedTraining).header("Authorization", tokenA)
+                        .contentType(MediaType.APPLICATION_JSON).content(updated))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("CANCELLED"))
+                .andExpect(jsonPath("$.version").value(1));
+        mvc.perform(put(base(a) + "/trainings/" + assignedTraining).header("Authorization", tokenA)
+                        .contentType(MediaType.APPLICATION_JSON).content(updated))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void scheduleValidatesCoachTimeSlotRangeAndTenant() throws Exception {
+        String groupA = group(tokenA, a, "A");
+        String groupB = group(tokenB, b, "B");
+        var coachB = member(b, "schedule-coach-b", AcademyRole.COACH);
+        mvc.perform(put(base(a) + "/groups/" + groupA + "/coaches/" + coach.getId())
+                        .header("Authorization", tokenA)).andExpect(status().isNoContent());
+        mvc.perform(put(base(b) + "/groups/" + groupB + "/coaches/" + coachB.getId())
+                        .header("Authorization", tokenB)).andExpect(status().isNoContent());
+        String date = LocalDate.now().plusDays(1).toString();
+        String foreignTraining = training(tokenB, b, groupB, coachB.getId(), date, "09:00", "10:00");
+
+        mvc.perform(post(base(a) + "/trainings").header("Authorization", tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(trainingJson(groupA, parent.getId(), date, "09:00", "10:00", "SCHEDULED")))
+                .andExpect(status().isBadRequest());
+        mvc.perform(post(base(a) + "/trainings").header("Authorization", tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(trainingJson(groupA, coach.getId(), date, "10:00", "09:00", "SCHEDULED")))
+                .andExpect(status().isBadRequest());
+        training(tokenA, a, groupA, coach.getId(), date, "09:00", "10:00");
+        mvc.perform(post(base(a) + "/trainings").header("Authorization", tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(trainingJson(groupA, coach.getId(), date, "09:00", "11:00", "SCHEDULED")))
+                .andExpect(status().isConflict());
+        mvc.perform(get(base(a) + "/trainings?from=" + date + "&to=" + LocalDate.now().plusDays(100))
+                        .header("Authorization", tokenA))
+                .andExpect(status().isBadRequest());
+        mvc.perform(get(base(a) + "/trainings/" + foreignTraining).header("Authorization", tokenA))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void scheduledTrainingsHaveIndependentAttendanceOnSameDay() throws Exception {
+        String group = group(tokenA, a, "Double session");
+        String player = player(tokenA, a, group);
+        mvc.perform(put(base(a) + "/groups/" + group + "/coaches/" + coach.getId())
+                        .header("Authorization", tokenA)).andExpect(status().isNoContent());
+        String date = LocalDate.now().minusDays(1).toString();
+        String morning = training(tokenA, a, group, coach.getId(), date, "09:00", "10:00");
+        String evening = training(tokenA, a, group, coach.getId(), date, "18:00", "19:00");
+
+        String morningPath = base(a) + "/trainings/" + morning + "/attendance";
+        String eveningPath = base(a) + "/trainings/" + evening + "/attendance";
+        mvc.perform(put(morningPath).header("Authorization", tokenCoach)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(attendanceJson(0, player, "PRESENT", "Morning")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.trainingId").value(morning));
+        mvc.perform(put(eveningPath).header("Authorization", tokenCoach)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(attendanceJson(0, player, "ABSENT", "Evening")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.trainingId").value(evening));
+        mvc.perform(get(morningPath).header("Authorization", tokenCoach))
+                .andExpect(jsonPath("$.players[0].status").value("PRESENT"));
+        mvc.perform(get(eveningPath).header("Authorization", tokenCoach))
+                .andExpect(jsonPath("$.players[0].status").value("ABSENT"));
+
+        mvc.perform(delete(base(a) + "/trainings/" + morning).header("Authorization", tokenA))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
     void attendanceValidatesRosterDateAndDatabaseTenantBoundaries() throws Exception {
         String groupA = group(tokenA, a, "A");
         String playerA = player(tokenA, a, groupA);
@@ -400,6 +502,13 @@ class AcademyRosterTests {
         assertThatThrownBy(() -> jdbc.update("insert into group_coaches (id, academy_id, group_id, membership_id) values (?, ?, ?, ?)",
                 UUID.randomUUID(), a.getId(), group, foreignMembership))
                 .isInstanceOf(DataIntegrityViolationException.class).hasMessageContaining("fk_coach_membership");
+        assertThatThrownBy(() -> jdbc.update("""
+                insert into scheduled_trainings
+                    (id, academy_id, group_id, coach_membership_id, training_date, start_time, end_time, status)
+                values (?, ?, ?, ?, ?, '10:00', '11:00', 'SCHEDULED')
+                """, UUID.randomUUID(), a.getId(), group, foreignMembership, LocalDate.now()))
+                .isInstanceOf(DataIntegrityViolationException.class)
+                .hasMessageContaining("fk_scheduled_training_coach");
         UUID parentMembership = memberships.findByAcademyIdAndUserId(a.getId(), parent.getId()).orElseThrow().getId();
         assertThatThrownBy(() -> jdbc.update("insert into group_coaches (id, academy_id, group_id, membership_id) values (?, ?, ?, ?)",
                 UUID.randomUUID(), a.getId(), group, parentMembership))
@@ -465,5 +574,22 @@ class AcademyRosterTests {
                 {"assessmentDate":"%s","technique":%s,"speed":7.5,"endurance":8.0,
                  "physicalFitness":7.8,"gameIntelligence":8.2,"comment":%s}
                 """.formatted(date, technique, commentJson);
+    }
+
+    private String training(String token, Academy academy, String groupId, UUID coachUserId,
+            String date, String startTime, String endTime) throws Exception {
+        String response = mvc.perform(post(base(academy) + "/trainings").header("Authorization", token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(trainingJson(groupId, coachUserId, date, startTime, endTime, "SCHEDULED")))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        return JsonPath.read(response, "$.id");
+    }
+
+    private String trainingJson(String groupId, UUID coachUserId, String date,
+            String startTime, String endTime, String status) {
+        return """
+                {"groupId":"%s","coachUserId":"%s","trainingDate":"%s",
+                 "startTime":"%s","endTime":"%s","location":"Main field","status":"%s"}
+                """.formatted(groupId, coachUserId, date, startTime, endTime, status);
     }
 }

@@ -39,6 +39,13 @@ const translatedDetails: Record<string, string> = {
   'An assessment already exists for this date': 'Для этого игрока уже есть оценка на выбранную дату.',
   'Assessment cannot be recorded for a future date': 'Нельзя добавить оценку на будущую дату.',
   'Assessment not found': 'Оценка не найдена или у вас нет к ней доступа.',
+  'Training has changed; reload it before saving': 'Тренировка уже была изменена. Обновите страницу и повторите сохранение.',
+  'The group already has a training at this time': 'У группы уже есть тренировка в это время.',
+  'Coach must be assigned to the training group': 'Сначала назначьте тренера выбранной группе.',
+  'Training end time must be after start time': 'Время окончания должно быть позже времени начала.',
+  'Training date range must be between 0 and 92 days': 'Период расписания должен составлять не более 92 дней.',
+  'Training not found': 'Тренировка не найдена или у вас нет к ней доступа.',
+  'Attendance cannot be recorded for a cancelled training': 'Нельзя отметить посещаемость отменённой тренировки.',
   'Invalid request content.': 'Проверьте заполнение полей формы.',
   FORBIDDEN: 'У вас недостаточно прав для этого действия.',
 }

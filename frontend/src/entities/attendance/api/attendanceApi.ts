@@ -27,3 +27,22 @@ export function saveAttendance(
     body: payload,
   })
 }
+
+function trainingAttendancePath(academyId: string, trainingId: string) {
+  return `/api/academies/${academyId}/trainings/${trainingId}/attendance`
+}
+
+export function getTrainingAttendance(token: string, academyId: string, trainingId: string) {
+  return apiRequest<AttendanceSheet>(trainingAttendancePath(academyId, trainingId), { token })
+}
+
+export function saveTrainingAttendance(
+  token: string,
+  academyId: string,
+  trainingId: string,
+  payload: AttendanceSheetPayload,
+) {
+  return apiRequest<AttendanceSheet>(trainingAttendancePath(academyId, trainingId), {
+    method: 'PUT', token, body: payload,
+  })
+}

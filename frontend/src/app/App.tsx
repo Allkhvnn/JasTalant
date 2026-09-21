@@ -21,6 +21,7 @@ import { AcceptInvitationPage } from '../pages/accept-invitation/AcceptInvitatio
 import { AttendancePage } from '../pages/attendance/AttendancePage'
 import { ParentPage } from '../pages/parent/ParentPage'
 import { DevelopmentPage } from '../pages/development/DevelopmentPage'
+import { SchedulePage } from '../pages/schedule/SchedulePage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, loading } = useAuth()
@@ -119,6 +120,7 @@ function App() {
               <Route path="groups" element={<GroupsPage />} />
               <Route path="players" element={<PlayersPage />} />
               <Route path="attendance" element={<AttendancePage />} />
+              <Route path="schedule" element={<SchedulePage />} />
               <Route path="development" element={<DevelopmentPage />} />
               <Route path="invitations" element={<AcademyAdminRoute><InvitationsPage /></AcademyAdminRoute>} />
             </Route>

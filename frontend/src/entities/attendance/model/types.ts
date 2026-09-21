@@ -11,6 +11,7 @@ export type AttendanceSheet = {
   id: string | null
   academyId: string
   groupId: string
+  trainingId: string | null
   trainingDate: string
   version: number
   saved: boolean
