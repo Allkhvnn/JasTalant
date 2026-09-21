@@ -2345,3 +2345,138 @@ footer {
     scroll-behavior: auto !important;
   }
 }
+
+.development-summary {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+  margin: 24px 0 10px;
+}
+
+.development-summary > div {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.development-summary span,
+.development-summary small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.development-summary strong {
+  display: block;
+  margin: 8px 0 2px;
+  color: #fff;
+  font-size: 28px;
+}
+
+.development-summary__average {
+  background: rgba(184, 227, 75, 0.1) !important;
+}
+
+.development-summary__average strong {
+  color: var(--lime);
+}
+
+.development-caption {
+  margin: 0 0 24px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.development-history {
+  display: grid;
+  gap: 14px;
+}
+
+.development-record {
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.development-record__heading,
+.development-record__heading > div:last-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.development-record__heading > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.development-record time {
+  color: #fff;
+  font-weight: 700;
+}
+
+.development-record__heading span,
+.development-record > p {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.development-record__metrics {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.development-record__metrics span {
+  padding: 10px;
+  border-radius: 10px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 12px;
+}
+
+.development-record__metrics strong {
+  display: block;
+  margin-top: 5px;
+  color: #fff;
+  font-size: 17px;
+}
+
+.development-record > p {
+  margin: 16px 0 0;
+  line-height: 1.6;
+}
+
+.development-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 16px;
+}
+
+@media (max-width: 900px) {
+  .development-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .development-record__metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .development-summary,
+  .development-summary--parent,
+  .development-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .development-record__heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

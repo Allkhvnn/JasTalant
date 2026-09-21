@@ -35,6 +35,10 @@ const translatedDetails: Record<string, string> = {
   'Attendance has changed; reload it before saving': 'Ведомость уже изменена. Обновите страницу и повторите сохранение.',
   'Player not found': 'Игрок не найден или у вас нет доступа к его данным.',
   'Parent access required': 'Для этого раздела нужна роль родителя.',
+  'Assessment has changed; reload it before saving': 'Оценка уже была изменена. Обновите страницу и повторите сохранение.',
+  'An assessment already exists for this date': 'Для этого игрока уже есть оценка на выбранную дату.',
+  'Assessment cannot be recorded for a future date': 'Нельзя добавить оценку на будущую дату.',
+  'Assessment not found': 'Оценка не найдена или у вас нет к ней доступа.',
   'Invalid request content.': 'Проверьте заполнение полей формы.',
   FORBIDDEN: 'У вас недостаточно прав для этого действия.',
 }

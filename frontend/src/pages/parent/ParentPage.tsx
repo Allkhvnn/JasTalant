@@ -3,9 +3,11 @@ import { Link, useSearchParams } from 'react-router-dom'
 import type { AttendanceStatus } from '../../entities/attendance/model/types'
 import {
   getChildAttendance,
+  getChildDevelopment,
   getMyChildren,
 } from '../../entities/parent/api/parentApi'
 import type { ChildAttendance } from '../../entities/parent/model/types'
+import type { DevelopmentAssessment } from '../../entities/development/model/types'
 import type { Player } from '../../entities/player/model/types'
 import { useAuth } from '../../features/auth/model/useAuth'
 import { errorMessage } from '../../shared/api/apiClient'
@@ -18,6 +20,15 @@ const statusLabels: Record<AttendanceStatus, string> = {
   LATE: 'Опоздал',
   EXCUSED: 'Уважительная причина',
 }
+
+const developmentLabels: Array<[keyof Pick<DevelopmentAssessment,
+  'technique' | 'speed' | 'endurance' | 'physicalFitness' | 'gameIntelligence'>, string]> = [
+  ['technique', 'Техника'],
+  ['speed', 'Скорость'],
+  ['endurance', 'Выносливость'],
+  ['physicalFitness', 'Физическая подготовка'],
+  ['gameIntelligence', 'Игровой интеллект'],
+]
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat('ru-RU', { dateStyle: 'long' }).format(new Date(`${value}T00:00:00`))
@@ -40,9 +51,11 @@ export function ParentPage() {
   const [children, setChildren] = useState<Player[]>([])
   const [childId, setChildId] = useState('')
   const [attendance, setAttendance] = useState<PageResponse<ChildAttendance> | null>(null)
+  const [development, setDevelopment] = useState<DevelopmentAssessment[]>([])
   const [page, setPage] = useState(0)
   const [childrenLoading, setChildrenLoading] = useState(Boolean(membership))
   const [attendanceLoading, setAttendanceLoading] = useState(false)
+  const [developmentLoading, setDevelopmentLoading] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -57,6 +70,7 @@ export function ParentPage() {
           : result.items[0]?.id || ''
         setChildId(selected)
         setAttendanceLoading(Boolean(selected))
+        setDevelopmentLoading(Boolean(selected))
         if (selected) setSearchParams({ childId: selected }, { replace: true })
       })
       .catch((requestError: unknown) => {
@@ -88,6 +102,22 @@ export function ParentPage() {
     }
   }, [childId, membership, page, token])
 
+  useEffect(() => {
+    if (!membership || !token || !childId) return
+    let cancelled = false
+    getChildDevelopment(token, membership.academyId, childId, 0, 100)
+      .then((result) => {
+        if (!cancelled) setDevelopment(result.items)
+      })
+      .catch((requestError: unknown) => {
+        if (!cancelled) setError(errorMessage(requestError))
+      })
+      .finally(() => {
+        if (!cancelled) setDevelopmentLoading(false)
+      })
+    return () => { cancelled = true }
+  }, [childId, membership, token])
+
   const selectedChild = children.find((child) => child.id === childId) || null
   const summary = useMemo(() => {
     const items = attendance?.items || []
@@ -104,7 +134,9 @@ export function ParentPage() {
     setChildId(nextChildId)
     setPage(0)
     setAttendance(null)
+    setDevelopment([])
     setAttendanceLoading(true)
+    setDevelopmentLoading(true)
     setError('')
     setSearchParams({ childId: nextChildId }, { replace: true })
   }
@@ -180,6 +212,45 @@ export function ParentPage() {
             <div><span>Уважительная</span><strong>{summary.excused}</strong></div>
             <div><span>Всего записей</span><strong>{attendance?.totalElements ?? '—'}</strong></div>
           </div>
+
+          <div className="parent-section-heading">
+            <div>
+              <p className="eyebrow">Развитие игрока</p>
+              <h2>Показатели</h2>
+            </div>
+            {development[0] && <span>Последняя оценка: {formatDate(development[0].assessmentDate)}</span>}
+          </div>
+
+          {developmentLoading ? (
+            <div className="list-state">Загружаем показатели…</div>
+          ) : development.length ? (
+            <>
+              <div className="development-summary development-summary--parent">
+                {developmentLabels.map(([key, label]) => (
+                  <div key={key}>
+                    <span>{label}</span>
+                    <strong>{development[0][key].toFixed(1)}</strong>
+                    <small>из 10</small>
+                  </div>
+                ))}
+              </div>
+              <div className="development-history">
+                {development.map((assessment) => (
+                  <article className="development-record" key={assessment.id}>
+                    <div className="development-record__heading">
+                      <div><time>{formatDate(assessment.assessmentDate)}</time><span>Тренер: {assessment.createdByName}</span></div>
+                    </div>
+                    <div className="development-record__metrics">
+                      {developmentLabels.map(([key, label]) => <span key={key}>{label} <strong>{assessment[key].toFixed(1)}</strong></span>)}
+                    </div>
+                    {assessment.comment && <p>{assessment.comment}</p>}
+                  </article>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="list-state"><strong>Оценок пока нет</strong><span>После тестирования тренер добавит показатели развития.</span></div>
+          )}
 
           <div className="parent-section-heading">
             <div>

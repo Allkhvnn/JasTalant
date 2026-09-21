@@ -245,6 +245,92 @@ class AcademyRosterTests {
     }
 
     @Test
+    void staffCanManageDevelopmentAssessmentsWithVersionAndDateChecks() throws Exception {
+        String assigned = group(tokenA, a, "Assigned");
+        String other = group(tokenA, a, "Other");
+        String player = player(tokenA, a, assigned);
+        String hiddenPlayer = player(tokenA, a, other);
+        String path = base(a) + "/players/" + player + "/development-assessments";
+        String date = LocalDate.now().minusDays(1).toString();
+
+        mvc.perform(get(path).header("Authorization", tokenCoach)).andExpect(status().isNotFound());
+        mvc.perform(put(base(a) + "/groups/" + assigned + "/coaches/" + coach.getId())
+                        .header("Authorization", tokenA))
+                .andExpect(status().isNoContent());
+
+        String response = mvc.perform(post(path).header("Authorization", tokenCoach)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(assessmentJson(date, "8.4", "First assessment")))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.technique").value(8.4))
+                .andExpect(jsonPath("$.createdByName").value(coach.getFullName()))
+                .andReturn().getResponse().getContentAsString();
+        String assessmentId = JsonPath.read(response, "$.id");
+
+        mvc.perform(post(path).header("Authorization", tokenCoach)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(assessmentJson(date, "7.0", null)))
+                .andExpect(status().isConflict());
+        mvc.perform(put(path + "/" + assessmentId).header("Authorization", tokenCoach)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"version\":0,\"details\":" + assessmentJson(date, "9.0", "Progress") + "}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.version").value(1))
+                .andExpect(jsonPath("$.technique").value(9.0));
+        mvc.perform(put(path + "/" + assessmentId).header("Authorization", tokenCoach)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"version\":0,\"details\":" + assessmentJson(date, "6.0", null) + "}"))
+                .andExpect(status().isConflict());
+        mvc.perform(post(path).header("Authorization", tokenCoach)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(assessmentJson(LocalDate.now().plusDays(1).toString(), "7.0", null)))
+                .andExpect(status().isBadRequest());
+        mvc.perform(post(path).header("Authorization", tokenCoach)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(assessmentJson(LocalDate.now().toString(), "10.1", null)))
+                .andExpect(status().isBadRequest());
+        mvc.perform(get(base(a) + "/players/" + hiddenPlayer + "/development-assessments")
+                        .header("Authorization", tokenCoach))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void parentReadsOnlyLinkedChildDevelopmentAndTenantsStayIsolated() throws Exception {
+        String groupA = group(tokenA, a, "A");
+        String groupB = group(tokenB, b, "B");
+        String child = player(tokenA, a, groupA);
+        String otherChild = player(tokenA, a, groupA);
+        String foreignChild = player(tokenB, b, groupB);
+        String date = LocalDate.now().minusDays(2).toString();
+
+        mvc.perform(post(base(a) + "/players/" + child + "/development-assessments")
+                        .header("Authorization", tokenA).contentType(MediaType.APPLICATION_JSON)
+                        .content(assessmentJson(date, "8.5", "Good progress")))
+                .andExpect(status().isCreated());
+        mvc.perform(put(base(a) + "/parents/" + parent.getId() + "/players/" + child)
+                        .header("Authorization", tokenA))
+                .andExpect(status().isNoContent());
+
+        mvc.perform(get(base(a) + "/parent/players/" + child + "/development-assessments")
+                        .header("Authorization", tokenParent))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.items[0].comment").value("Good progress"));
+        mvc.perform(get(base(a) + "/parent/players/" + otherChild + "/development-assessments")
+                        .header("Authorization", tokenParent))
+                .andExpect(status().isNotFound());
+        mvc.perform(get(base(a) + "/parent/players/" + foreignChild + "/development-assessments")
+                        .header("Authorization", tokenParent))
+                .andExpect(status().isNotFound());
+        mvc.perform(get(base(a) + "/players/" + child + "/development-assessments")
+                        .header("Authorization", tokenParent))
+                .andExpect(status().isForbidden());
+        mvc.perform(get(base(a) + "/players/" + foreignChild + "/development-assessments")
+                        .header("Authorization", tokenA))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     void attendanceValidatesRosterDateAndDatabaseTenantBoundaries() throws Exception {
         String groupA = group(tokenA, a, "A");
         String playerA = player(tokenA, a, groupA);
@@ -371,5 +457,13 @@ class AcademyRosterTests {
         return """
                 {"version":%d,"records":[{"playerId":"%s","status":"%s","comment":%s}]}
                 """.formatted(version, playerId, status, commentJson);
+    }
+
+    private String assessmentJson(String date, String technique, String comment) {
+        String commentJson = comment == null ? "null" : "\"" + comment + "\"";
+        return """
+                {"assessmentDate":"%s","technique":%s,"speed":7.5,"endurance":8.0,
+                 "physicalFitness":7.8,"gameIntelligence":8.2,"comment":%s}
+                """.formatted(date, technique, commentJson);
     }
 }

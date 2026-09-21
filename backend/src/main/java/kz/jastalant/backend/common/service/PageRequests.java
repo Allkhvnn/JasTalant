@@ -14,4 +14,11 @@ public final class PageRequests {
         }
         return PageRequest.of(page, size, Sort.by("id"));
     }
+
+    public static PageRequest of(int page, int size, Sort sort) {
+        if (page < 0 || size < 1 || size > 100) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST, "Page must be non-negative and size between 1 and 100");
+        }
+        return PageRequest.of(page, size, sort);
+    }
 }
