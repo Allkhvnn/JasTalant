@@ -28,6 +28,7 @@ public class SecurityConfiguration {
                 .formLogin(form -> form.disable()).httpBasic(basic -> basic.disable()).logout(logout -> logout.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login", "/api/auth/verify-email",
+                                "/api/auth/refresh", "/api/auth/logout", "/api/auth/forgot-password", "/api/auth/reset-password",
                                 "/api/invitations/preview", "/api/invitations/accept-new").permitAll()
                         .requestMatchers("/api/platform/**").hasRole("SUPER_ADMIN")
                         .requestMatchers("/api/academies/*/groups", "/api/academies/*/groups/**",

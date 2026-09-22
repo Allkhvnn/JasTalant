@@ -23,6 +23,8 @@ import { ParentPage } from '../pages/parent/ParentPage'
 import { DevelopmentPage } from '../pages/development/DevelopmentPage'
 import { SchedulePage } from '../pages/schedule/SchedulePage'
 import { MembersPage } from '../pages/members/MembersPage'
+import { ForgotPasswordPage } from '../pages/forgot-password/ForgotPasswordPage'
+import { ResetPasswordPage } from '../pages/reset-password/ResetPasswordPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, loading } = useAuth()
@@ -72,6 +74,8 @@ function App() {
           <Route element={<AppLayout />}>
             <Route index element={<HomePage />} />
             <Route path="login" element={<LoginPage />} />
+            <Route path="forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="reset-password" element={<ResetPasswordPage />} />
             <Route path="register" element={<RegisterPage />} />
             <Route path="verify-email" element={<VerifyEmailPage />} />
             <Route path="accept-invitation" element={<AcceptInvitationPage />} />

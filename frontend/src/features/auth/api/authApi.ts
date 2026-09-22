@@ -18,6 +18,22 @@ export function login(payload: LoginPayload) {
   })
 }
 
+export function refreshAccessToken() {
+  return apiRequest<AccessToken>('/api/auth/refresh', { method: 'POST' })
+}
+
+export function logout() {
+  return apiRequest<void>('/api/auth/logout', { method: 'POST' })
+}
+
+export function forgotPassword(email: string) {
+  return apiRequest<void>('/api/auth/forgot-password', { method: 'POST', body: { email } })
+}
+
+export function resetPassword(token: string, password: string) {
+  return apiRequest<void>('/api/auth/reset-password', { method: 'POST', body: { token, password } })
+}
+
 export function register(payload: RegisterPayload) {
   return apiRequest('/api/auth/register', {
     method: 'POST',

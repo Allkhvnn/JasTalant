@@ -60,6 +60,7 @@ export function LoginPage() {
           <span>Пароль</span>
           <input name="password" type="password" autoComplete="current-password" maxLength={128} required />
         </label>
+        <p className="field-hint"><Link to="/forgot-password">Забыли пароль?</Link></p>
 
         <button className="button button--full" type="submit" disabled={submitting}>
           {submitting ? 'Входим…' : 'Войти'}

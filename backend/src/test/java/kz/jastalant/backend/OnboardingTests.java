@@ -17,6 +17,7 @@ import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import jakarta.servlet.http.Cookie;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mail.MailSendException;
 import org.springframework.mail.SimpleMailMessage;
@@ -63,11 +64,78 @@ class OnboardingTests {
 
     @BeforeEach
     void clearData() {
+        jdbc.execute("delete from password_reset_tokens");
+        jdbc.execute("delete from auth_refresh_tokens");
         jdbc.execute("delete from academy_applications");
         jdbc.execute("delete from academy_memberships");
         jdbc.execute("delete from academies");
         jdbc.execute("delete from app_users");
         reset(mail);
+    }
+
+    @Test
+    void refreshTokenRotatesAndLogoutRevokesSession() throws Exception {
+        register("session@example.kz");
+        var loginResult = mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"session@example.kz\",\"password\":\"" + PASSWORD + "\"}"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Set-Cookie", org.hamcrest.Matchers.containsString("HttpOnly")))
+                .andReturn();
+        Cookie first = loginResult.getResponse().getCookie("jastalant_refresh");
+        assertThat(first).isNotNull();
+        assertThat(jdbc.queryForObject("select token_hash from auth_refresh_tokens", String.class))
+                .hasSize(64).isNotEqualTo(first.getValue());
+
+        var refreshResult = mvc.perform(post("/api/auth/refresh").cookie(first))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.accessToken").isString()).andReturn();
+        Cookie second = refreshResult.getResponse().getCookie("jastalant_refresh");
+        assertThat(second).isNotNull();
+        assertThat(second.getValue()).isNotEqualTo(first.getValue());
+        mvc.perform(post("/api/auth/refresh").cookie(first)).andExpect(status().isUnauthorized());
+
+        mvc.perform(post("/api/auth/logout").cookie(second))
+                .andExpect(status().isNoContent())
+                .andExpect(header().string("Set-Cookie", org.hamcrest.Matchers.containsString("Max-Age=0")));
+        mvc.perform(post("/api/auth/refresh").cookie(second)).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void passwordResetIsPrivateOneTimeAndRevokesSessions() throws Exception {
+        register("reset@example.kz");
+        verifyEmail(verificationCode(), 204);
+        var loginResult = mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"reset@example.kz\",\"password\":\"" + PASSWORD + "\"}"))
+                .andExpect(status().isOk()).andReturn();
+        Cookie refresh = loginResult.getResponse().getCookie("jastalant_refresh");
+        reset(mail);
+
+        mvc.perform(post("/api/auth/forgot-password").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"missing@example.kz\"}"))
+                .andExpect(status().isNoContent());
+        mvc.perform(post("/api/auth/forgot-password").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"reset@example.kz\"}"))
+                .andExpect(status().isNoContent());
+        var captor = ArgumentCaptor.forClass(SimpleMailMessage.class);
+        verify(mail).send(captor.capture());
+        String resetLink = captor.getValue().getText().split("\\n\\n")[1];
+        String resetToken = resetLink.substring(resetLink.indexOf("token=") + 6);
+        assertThat(jdbc.queryForObject("select token_hash from password_reset_tokens", String.class))
+                .hasSize(64).isNotEqualTo(resetToken);
+
+        String nextPassword = "A-new-secure-password-84";
+        mvc.perform(post("/api/auth/reset-password").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"token\":\"" + resetToken + "\",\"password\":\"" + nextPassword + "\"}"))
+                .andExpect(status().isNoContent());
+        mvc.perform(post("/api/auth/reset-password").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"token\":\"" + resetToken + "\",\"password\":\"" + nextPassword + "\"}"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(post("/api/auth/refresh").cookie(refresh)).andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"reset@example.kz\",\"password\":\"" + PASSWORD + "\"}"))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"reset@example.kz\",\"password\":\"" + nextPassword + "\"}"))
+                .andExpect(status().isOk());
     }
 
     @Test

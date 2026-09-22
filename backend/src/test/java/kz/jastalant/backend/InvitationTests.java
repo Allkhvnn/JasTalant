@@ -80,6 +80,8 @@ class InvitationTests {
         jdbc.execute("delete from academy_applications");
         jdbc.execute("delete from academy_memberships");
         jdbc.execute("delete from academies");
+        jdbc.execute("delete from password_reset_tokens");
+        jdbc.execute("delete from auth_refresh_tokens");
         jdbc.execute("delete from app_users");
         reset(mail);
 

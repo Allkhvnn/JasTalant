@@ -80,6 +80,10 @@ public class User {
         this.verificationExpiresAt = null;
     }
 
+    public void changePasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
+
     /** Only used by the offline owner bootstrap, never by public registration. */
     public static User platformOwner(String email, String fullName, String encodedPassword) {
         User user = new User(email, fullName, encodedPassword);

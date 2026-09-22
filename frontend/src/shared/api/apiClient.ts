@@ -11,6 +11,8 @@ type ProblemDetails = {
 
 const translatedDetails: Record<string, string> = {
   'Invalid email or password': 'Неверный email или пароль.',
+  'Invalid or expired session': 'Сессия завершена. Войдите снова.',
+  'Invalid or expired password reset token': 'Ссылка недействительна или срок её действия истёк.',
   'Email is already registered': 'Пользователь с таким email уже зарегистрирован.',
   'Invalid or expired verification code': 'Код недействителен или срок его действия истёк.',
   'Email is already verified': 'Email уже подтверждён.',
@@ -84,6 +86,7 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
   try {
     response = await fetch(path, {
       ...requestOptions,
+      credentials: 'same-origin',
       headers: requestHeaders,
       body: body === undefined ? undefined : JSON.stringify(body),
     })

@@ -1,6 +1,5 @@
 package kz.jastalant.backend.auth.service;
 
-import kz.jastalant.backend.auth.dto.AccessTokenResponse;
 import kz.jastalant.backend.auth.dto.AccountResponse;
 import kz.jastalant.backend.auth.dto.LoginRequest;
 import kz.jastalant.backend.auth.dto.RegisterRequest;
@@ -9,7 +8,6 @@ import kz.jastalant.backend.onboarding.dto.ApplicationView;
 import kz.jastalant.backend.onboarding.mapper.ApplicationMapper;
 import kz.jastalant.backend.onboarding.entity.AcademyApplication;
 import kz.jastalant.backend.onboarding.repository.AcademyApplicationRepository;
-import kz.jastalant.backend.security.JwtService;
 import kz.jastalant.backend.user.entity.User;
 import kz.jastalant.backend.user.repository.UserRepository;
 
@@ -28,18 +26,18 @@ public class AuthService {
     private final UserRepository users;
     private final AcademyApplicationRepository applications;
     private final PasswordEncoder passwords;
-    private final JwtService jwt;
     private final VerificationMailer mailer;
+    private final RefreshSessionService sessions;
     private final Clock clock;
     private final String dummyHash;
 
     public AuthService(UserRepository users, AcademyApplicationRepository applications, PasswordEncoder passwords,
-                       JwtService jwt, VerificationMailer mailer, Clock clock) {
+                       VerificationMailer mailer, RefreshSessionService sessions, Clock clock) {
         this.users = users;
         this.applications = applications;
         this.passwords = passwords;
-        this.jwt = jwt;
         this.mailer = mailer;
+        this.sessions = sessions;
         this.clock = clock;
         this.dummyHash = passwords.encode(UUID.randomUUID().toString());
     }
@@ -54,12 +52,12 @@ public class AuthService {
         return ApplicationMapper.toView(application);
     }
 
-    @Transactional(readOnly = true)
-    public AccessTokenResponse login(LoginRequest request) {
+    @Transactional
+    public RefreshSessionService.Session login(LoginRequest request) {
         var user = users.findByEmail(User.normalizeEmail(request.email()));
         boolean matches = passwords.matches(request.password(), user.map(User::getPasswordHash).orElse(dummyHash));
         if (user.isEmpty() || !matches) throw new BusinessException(ErrorCode.UNAUTHENTICATED, "Invalid email or password");
-        return jwt.issue(user.orElseThrow().getId());
+        return sessions.create(user.orElseThrow());
     }
 
     @Transactional
