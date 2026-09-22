@@ -24,6 +24,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.hamcrest.Matchers.hasItems;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -186,6 +187,79 @@ class AcademyRosterTests {
         mvc.perform(get(base(a) + "/members?role=COACH"))
                 .andExpect(status().isUnauthorized());
         mvc.perform(get(base(a) + "/members?role=UNKNOWN").header("Authorization", tokenA))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void adminManagesMemberRolesAndAccessWithoutLosingLastAdministrator() throws Exception {
+        String memberPath = base(a) + "/members/" + coach.getId();
+        mvc.perform(get(base(a) + "/members").header("Authorization", tokenA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(3))
+                .andExpect(jsonPath("$[1].userId").value(coach.getId().toString()))
+                .andExpect(jsonPath("$[1].active").value(true));
+
+        mvc.perform(put(base(a) + "/members/" + adminA.getId()).header("Authorization", tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"version\":0,\"roles\":[\"COACH\"],\"active\":true}"))
+                .andExpect(status().isConflict());
+        mvc.perform(put(base(a) + "/members/" + adminA.getId()).header("Authorization", tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"version\":0,\"roles\":[\"ADMIN\"],\"active\":false}"))
+                .andExpect(status().isConflict());
+
+        mvc.perform(put(memberPath).header("Authorization", tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"version\":0,\"roles\":[\"ADMIN\",\"COACH\"],\"active\":true}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.version").value(1))
+                .andExpect(jsonPath("$.roles", hasItems("ADMIN", "COACH")));
+        mvc.perform(put(memberPath).header("Authorization", tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"version\":0,\"roles\":[\"ADMIN\"],\"active\":true}"))
+                .andExpect(status().isConflict());
+
+        mvc.perform(put(base(a) + "/members/" + adminA.getId()).header("Authorization", tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"version\":0,\"roles\":[\"ADMIN\"],\"active\":false}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.active").value(false));
+        mvc.perform(get(base(a) + "/groups").header("Authorization", tokenA)).andExpect(status().isForbidden());
+        mvc.perform(get("/api/auth/academies").header("Authorization", tokenA))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(0));
+
+        mvc.perform(put(base(a) + "/members/" + adminA.getId()).header("Authorization", tokenCoach)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"version\":1,\"roles\":[\"ADMIN\"],\"active\":true}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.active").value(true));
+    }
+
+    @Test
+    void roleRemovalCleansAssignmentsAndMembershipUpdatesStayInsideAcademy() throws Exception {
+        String group = group(tokenA, a, "Managed");
+        mvc.perform(put(base(a) + "/groups/" + group + "/coaches/" + coach.getId())
+                        .header("Authorization", tokenA)).andExpect(status().isNoContent());
+
+        mvc.perform(put(base(a) + "/members/" + coach.getId()).header("Authorization", tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"version\":0,\"roles\":[\"PARENT\"],\"active\":true}"))
+                .andExpect(status().isOk());
+        mvc.perform(get(base(a) + "/groups/" + group + "/coaches").header("Authorization", tokenA))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(0));
+        mvc.perform(get(base(a) + "/groups").header("Authorization", tokenCoach)).andExpect(status().isForbidden());
+        mvc.perform(get(base(a) + "/members?role=COACH").header("Authorization", tokenA))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(0));
+
+        mvc.perform(put(base(a) + "/members/" + adminB.getId()).header("Authorization", tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"version\":0,\"roles\":[\"ADMIN\"],\"active\":false}"))
+                .andExpect(status().isNotFound());
+        mvc.perform(put(base(a) + "/members/" + parent.getId()).header("Authorization", tokenParent)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"version\":0,\"roles\":[\"PARENT\"],\"active\":false}"))
+                .andExpect(status().isForbidden());
+        mvc.perform(put(base(a) + "/members/" + parent.getId()).header("Authorization", tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"version\":0,\"roles\":[],\"active\":true}"))
                 .andExpect(status().isBadRequest());
     }
 

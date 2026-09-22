@@ -47,6 +47,9 @@ public class AcademyPermissionService {
         }
         var membership = memberships.findByAcademyIdAndUserId(academyId, actor)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "Academy not found"));
+        if (!membership.isActive()) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "Academy access is disabled");
+        }
         return new Scope(false, membership.getId(), java.util.Set.copyOf(membership.getRoles()));
     }
 }

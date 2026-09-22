@@ -47,6 +47,12 @@ public class AcademyMembership {
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
+    @Column(nullable = false)
+    private boolean active = true;
+
+    @Version
+    private long version;
+
     public AcademyMembership(Academy academy, User user, AcademyRole... roles) {
         this.academy = academy;
         this.user = user;
@@ -68,5 +74,18 @@ public class AcademyMembership {
             throw new IllegalArgumentException("At least one academy role is required");
         }
         additionalRoles.forEach(role -> roles.add(Objects.requireNonNull(role, "Role must not be null")));
+    }
+
+    public void update(Set<AcademyRole> nextRoles, boolean active) {
+        if (nextRoles == null || nextRoles.isEmpty()) {
+            throw new IllegalArgumentException("At least one academy role is required");
+        }
+        roles.clear();
+        nextRoles.forEach(role -> roles.add(Objects.requireNonNull(role, "Role must not be null")));
+        this.active = active;
+    }
+
+    public void activate() {
+        this.active = true;
     }
 }

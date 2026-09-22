@@ -131,7 +131,7 @@ public class ScheduledTrainingService {
     private AcademyMembership requireAssignedCoach(UUID academyId, UUID groupId, UUID coachUserId) {
         var membership = memberships.findByAcademyIdAndUserId(academyId, coachUserId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "Coach not found in this academy"));
-        if (!membership.getRoles().contains(AcademyRole.COACH)
+        if (!membership.isActive() || !membership.getRoles().contains(AcademyRole.COACH)
                 || !groupCoaches.existsByAcademyIdAndGroupIdAndMembershipId(academyId, groupId, membership.getId())) {
             throw new BusinessException(ErrorCode.INVALID_REQUEST, "Coach must be assigned to the training group");
         }

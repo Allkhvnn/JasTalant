@@ -75,7 +75,7 @@ public class GroupService {
         find(academyId, groupId);
         var membership = memberships.findByAcademyIdAndUserId(academyId, userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "Coach not found in this academy"));
-        if (!membership.getRoles().contains(AcademyRole.COACH)) {
+        if (!membership.isActive() || !membership.getRoles().contains(AcademyRole.COACH)) {
             throw new BusinessException(ErrorCode.INVALID_REQUEST, "The member must have the COACH role");
         }
         if (!coaches.existsByAcademyIdAndGroupIdAndMembershipId(academyId, groupId, membership.getId())) {

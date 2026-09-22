@@ -20,10 +20,14 @@ public final class AcademyMembershipMapper {
     public static AcademyMemberView toMemberView(AcademyMembership membership) {
         var user = membership.getUser();
         return new AcademyMemberView(
+                membership.getId(),
                 user.getId(),
                 user.getFullName(),
                 user.getEmail(),
-                Set.copyOf(membership.getRoles())
+                Set.copyOf(membership.getRoles()),
+                membership.isActive(),
+                membership.getVersion(),
+                membership.getCreatedAt()
         );
     }
 }

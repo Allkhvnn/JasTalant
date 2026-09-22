@@ -144,6 +144,7 @@ public class InvitationService {
                 .orElseGet(() -> memberships.save(new AcademyMembership(academy, user,
                         invitation.getRoles().toArray(AcademyRole[]::new))));
         membership.addRoles(invitation.getRoles());
+        membership.activate();
         memberships.flush();
 
         if (invitation.getRoles().contains(AcademyRole.PARENT)) {

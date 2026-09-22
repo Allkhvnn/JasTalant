@@ -22,6 +22,7 @@ export function AcademyLayout() {
           <NavLink to="/academy/schedule">Расписание</NavLink>
           <NavLink to="/academy/attendance">Посещаемость</NavLink>
           <NavLink to="/academy/development">Показатели</NavLink>
+          {canManage && <NavLink to="/academy/members">Участники</NavLink>}
           {canManage && <NavLink to="/academy/invitations">Приглашения</NavLink>}
         </nav>
       </aside>

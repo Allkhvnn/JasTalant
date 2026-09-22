@@ -69,7 +69,7 @@ public class ParentPlayerService {
         permissions.resolve(actor, academyId).requireManager();
         var membership = memberships.findByAcademyIdAndUserId(academyId, parentUserId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "Parent not found in this academy"));
-        if (!membership.getRoles().contains(AcademyRole.PARENT)) {
+        if (!membership.isActive() || !membership.getRoles().contains(AcademyRole.PARENT)) {
             throw new BusinessException(ErrorCode.INVALID_REQUEST, "The member must have the PARENT role");
         }
         players.findByAcademyIdAndId(academyId, playerId)

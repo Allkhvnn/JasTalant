@@ -46,6 +46,10 @@ const translatedDetails: Record<string, string> = {
   'Training date range must be between 0 and 92 days': 'Период расписания должен составлять не более 92 дней.',
   'Training not found': 'Тренировка не найдена или у вас нет к ней доступа.',
   'Attendance cannot be recorded for a cancelled training': 'Нельзя отметить посещаемость отменённой тренировки.',
+  'Academy access is disabled': 'Ваш доступ к этой академии отключён.',
+  'Academy member has changed; reload it before saving': 'Данные участника уже изменились. Обновите страницу и повторите сохранение.',
+  'The academy must have at least one active administrator': 'В академии должен остаться хотя бы один активный администратор.',
+  'Academy member not found': 'Участник академии не найден.',
   'Invalid request content.': 'Проверьте заполнение полей формы.',
   FORBIDDEN: 'У вас недостаточно прав для этого действия.',
 }

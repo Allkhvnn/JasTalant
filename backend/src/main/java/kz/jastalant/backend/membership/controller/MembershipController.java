@@ -1,16 +1,14 @@
 package kz.jastalant.backend.membership.controller;
 
 import kz.jastalant.backend.membership.dto.AcademyMemberView;
+import kz.jastalant.backend.membership.dto.AcademyMemberUpdateRequest;
 import kz.jastalant.backend.membership.entity.AcademyRole;
 import kz.jastalant.backend.membership.service.MembershipService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
@@ -25,7 +23,16 @@ public class MembershipController {
     public List<AcademyMemberView> list(
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable UUID academyId,
-            @RequestParam AcademyRole role) {
+            @RequestParam(required = false) AcademyRole role) {
         return memberships.academyMembers(UUID.fromString(jwt.getSubject()), academyId, role);
+    }
+
+    @PutMapping("/{userId}")
+    public AcademyMemberView update(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable UUID academyId,
+            @PathVariable UUID userId,
+            @Valid @RequestBody AcademyMemberUpdateRequest request) {
+        return memberships.update(UUID.fromString(jwt.getSubject()), academyId, userId, request);
     }
 }

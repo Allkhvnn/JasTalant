@@ -17,8 +17,18 @@ public interface AcademyMembershipRepository extends Repository<AcademyMembershi
     Optional<AcademyMembership> findByAcademyIdAndUserId(UUID academyId, UUID userId);
     List<AcademyMembership> findAllByAcademyId(UUID academyId);
 
+    @Query("""
+            select distinct membership from AcademyMembership membership
+            join fetch membership.user user
+            left join fetch membership.roles
+            where membership.academy.id = :academyId
+            order by user.fullName, user.id
+            """)
+    List<AcademyMembership> findAllByAcademyIdWithUserAndRoles(@Param("academyId") UUID academyId);
+
     @Query("select membership from AcademyMembership membership join fetch membership.academy "
-            + "where membership.user.id = :userId order by membership.academy.name, membership.id")
+            + "where membership.user.id = :userId and membership.active = true "
+            + "order by membership.academy.name, membership.id")
     List<AcademyMembership> findAllByUserIdWithAcademy(@Param("userId") UUID userId);
 
     @Query("""
@@ -27,10 +37,18 @@ public interface AcademyMembershipRepository extends Repository<AcademyMembershi
             join fetch membership.user user
             left join fetch membership.roles
             where membership.academy.id = :academyId
+              and membership.active = true
               and :role member of membership.roles
             order by user.fullName, user.id
             """)
     List<AcademyMembership> findAllByAcademyIdAndRoleWithUser(
             @Param("academyId") UUID academyId,
             @Param("role") AcademyRole role);
+
+    @Query("""
+            select count(distinct membership.id) from AcademyMembership membership
+            where membership.academy.id = :academyId and membership.active = true
+              and :role member of membership.roles
+            """)
+    long countActiveByAcademyIdAndRole(@Param("academyId") UUID academyId, @Param("role") AcademyRole role);
 }

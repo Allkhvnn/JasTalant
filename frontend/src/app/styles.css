@@ -2481,6 +2481,149 @@ footer {
   }
 }
 
+.members-toolbar {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) auto;
+}
+
+.member-list {
+  display: grid;
+  gap: 12px;
+}
+
+.member-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 18px;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.member-card--disabled {
+  opacity: 0.68;
+}
+
+.member-card__avatar {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border-radius: 14px;
+  color: var(--ink);
+  background: var(--lime);
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.member-card__identity h2,
+.member-card__identity p {
+  margin: 0 0 5px;
+}
+
+.member-card__identity h2 {
+  color: #fff;
+  font-size: 17px;
+}
+
+.member-card__identity p {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.member-card__identity > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 9px;
+}
+
+.role-pill,
+.access-state {
+  padding: 6px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.role-pill {
+  color: #dfe9ff;
+  background: rgba(76, 125, 255, 0.14);
+}
+
+.access-state {
+  color: #ffb5ae;
+  background: rgba(225, 79, 65, 0.13);
+  white-space: nowrap;
+}
+
+.access-state--active {
+  color: var(--lime);
+  background: rgba(184, 227, 75, 0.1);
+}
+
+.choice-grid--three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.access-toggle {
+  display: flex;
+  gap: 14px;
+  padding: 17px;
+  border: 1px solid rgba(225, 79, 65, 0.28);
+  border-radius: 15px;
+  cursor: pointer;
+}
+
+.access-toggle--active {
+  border-color: rgba(184, 227, 75, 0.3);
+  background: rgba(184, 227, 75, 0.05);
+}
+
+.access-toggle span {
+  display: grid;
+  gap: 5px;
+}
+
+.access-toggle small {
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+@media (max-width: 900px) {
+  .member-card {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .member-card > .button {
+    grid-column: 1 / -1;
+    justify-self: end;
+  }
+
+  .choice-grid--three {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .members-toolbar,
+  .member-card {
+    grid-template-columns: 1fr;
+  }
+
+  .member-card__avatar {
+    width: 42px;
+    height: 42px;
+  }
+
+  .member-card > .button,
+  .access-state {
+    justify-self: start;
+  }
+}
+
 .schedule-toolbar {
   display: grid;
   grid-template-columns: repeat(3, minmax(150px, 1fr)) auto;
