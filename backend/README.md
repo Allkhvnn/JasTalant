@@ -18,12 +18,6 @@ $env:JAVA_HOME = 'C:\Program Files\Eclipse Adoptium\jdk-21.0.9.10-hotspot'
 $env:Path = "$env:JAVA_HOME\bin;$env:Path"
 java -version
 
-$env:DB_PASSWORD = 'your-local-password'
-$jwtKey = New-Object byte[] 32
-$rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
-$rng.GetBytes($jwtKey)
-$rng.Dispose()
-$env:JWT_SECRET_BASE64 = [Convert]::ToBase64String($jwtKey)
 docker compose up -d --wait
 .\gradlew.bat bootRun --args='--spring.profiles.active=local'
 ```
@@ -34,11 +28,10 @@ Mailpit принимает локальные письма на порту 1025;
 можно в браузере по адресу http://localhost:8025. Письма не уходят реальным адресатам.
 JWT-ключ храните вне репозитория и используйте один и тот же при перезапусках;
 генерация нового ключа делает ранее выданные токены недействительными.
-При конфликте порта измените порт Compose и задайте соответствующий `DB_URL`.
+При конфликте порта задайте одинаковый порт в `DB_PORT` и `DB_URL` файла `.env`.
 
-Compose также читает `.env`, созданный по образцу `.env.example`, но Spring Boot
-не загружает этот файл автоматически: передавайте `DB_PASSWORD` приложению через
-окружение или настройки запуска IDE. Не коммитьте пароли.
+Создайте `.env` по образцу `.env.example`. Docker Compose и Spring Boot с профилем
+`local` читают его автоматически. Не коммитьте пароли и JWT-секрет.
 Пароль PostgreSQL задаётся при первом создании тома; изменение переменной
 не меняет пароль в уже существующей БД.
 
