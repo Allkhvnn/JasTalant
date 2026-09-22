@@ -98,7 +98,8 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
     return undefined as T
   }
 
-  const isJson = response.headers.get('content-type')?.includes('application/json')
+  const contentType = response.headers.get('content-type')?.toLowerCase() || ''
+  const isJson = contentType.includes('application/json') || contentType.includes('+json')
   const payload = isJson ? ((await response.json()) as ProblemDetails | T) : await response.text()
 
   if (!response.ok) {
