@@ -2481,6 +2481,495 @@ footer {
   }
 }
 
+/* CRM workspace follows the light dashboard language from the product reference. */
+.crm-shell {
+  min-height: 100vh;
+  background: #f3f6fa;
+}
+
+.crm-shell .academy-workspace {
+  min-height: 100vh;
+  grid-template-columns: 238px minmax(0, 1fr);
+  border: 0;
+}
+
+.crm-shell .academy-sidebar {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 26px 16px 18px;
+  border: 0;
+  color: #d9e4ef;
+  background: linear-gradient(180deg, #0d2335 0%, #0a1b2a 100%);
+}
+
+.academy-sidebar__brand {
+  display: block;
+  padding: 0 10px 24px;
+  color: #fff;
+  text-decoration: none;
+}
+
+.academy-sidebar__brand .brand__mark {
+  color: #fff;
+  background: #315eea;
+}
+
+.crm-shell .academy-sidebar__identity {
+  padding: 18px 10px;
+  border-block: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.crm-shell .academy-sidebar__mark {
+  color: #fff;
+  background: rgba(73, 111, 244, 0.88);
+}
+
+.crm-shell .academy-sidebar__identity span:not(.academy-sidebar__mark) {
+  color: #8295a7;
+}
+
+.crm-shell .academy-sidebar nav {
+  gap: 4px;
+  margin-top: 22px;
+}
+
+.crm-shell .academy-sidebar nav a,
+.academy-sidebar__footer a,
+.academy-sidebar__footer button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 8px;
+  color: #aebdca;
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.crm-shell .academy-sidebar nav a > span,
+.academy-sidebar__footer span {
+  width: 18px;
+  color: #8398aa;
+  font-size: 17px;
+  text-align: center;
+}
+
+.crm-shell .academy-sidebar nav a:hover,
+.academy-sidebar__footer a:hover,
+.academy-sidebar__footer button:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.crm-shell .academy-sidebar nav a.active {
+  color: #fff;
+  background: #315eea;
+}
+
+.crm-shell .academy-sidebar nav a.active > span {
+  color: #fff;
+}
+
+.academy-sidebar__footer {
+  display: grid;
+  gap: 3px;
+  margin-top: auto;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.academy-sidebar__footer button {
+  width: 100%;
+}
+
+.crm-shell .academy-content {
+  min-width: 0;
+  --line: #dfe6ef;
+  --muted: #718096;
+  --panel: #fff;
+  --ink: #102033;
+  --lime: #315eea;
+  color: #17263a;
+  background: #f3f6fa;
+}
+
+.crm-topbar {
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  padding: 0 clamp(24px, 4vw, 48px);
+  border-bottom: 1px solid #e1e7ef;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.crm-topbar > div:first-child,
+.crm-account > div {
+  display: grid;
+  gap: 3px;
+}
+
+.crm-topbar span {
+  color: #7a8799;
+  font-size: 11px;
+}
+
+.crm-topbar strong {
+  overflow: hidden;
+  color: #142237;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crm-account {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.crm-account__avatar {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff !important;
+  background: #315eea;
+  font-weight: 800;
+}
+
+.crm-shell .workspace-page {
+  padding: clamp(26px, 4vw, 48px);
+}
+
+.crm-shell .workspace-page h1,
+.crm-shell .workspace-page h2,
+.crm-shell .workspace-page h3,
+.crm-shell .workspace-page strong {
+  color: #142237;
+}
+
+.crm-shell .workspace-heading h1 {
+  margin-bottom: 10px;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: clamp(30px, 4vw, 46px);
+  font-weight: 750;
+  letter-spacing: -0.035em;
+}
+
+.crm-shell .eyebrow {
+  color: #315eea;
+}
+
+.crm-shell .button {
+  border-color: #315eea;
+  color: #fff;
+  background: #315eea;
+}
+
+.crm-shell .button:hover:not(:disabled) {
+  background: #244fd5;
+}
+
+.crm-shell .button--secondary {
+  border-color: #d8e0eb;
+  color: #25354a;
+  background: #fff;
+}
+
+.crm-shell .management-card,
+.crm-shell .player-card,
+.crm-shell .list-toolbar,
+.crm-shell .attendance-toolbar,
+.crm-shell .attendance-row,
+.crm-shell .attendance-summary > div,
+.crm-shell .development-summary > div,
+.crm-shell .development-record,
+.crm-shell .member-card,
+.crm-shell .schedule-toolbar,
+.crm-shell .training-card,
+.crm-shell .setup-card {
+  border-color: #dfe6ef;
+  background: #fff;
+  box-shadow: 0 5px 18px rgba(30, 54, 82, 0.04);
+}
+
+.crm-shell .field input,
+.crm-shell .field textarea,
+.crm-shell .field select,
+.crm-shell .list-toolbar select,
+.crm-shell .schedule-toolbar input,
+.crm-shell .schedule-toolbar select {
+  border-color: #d8e0eb;
+  color: #17263a;
+  background: #fff;
+}
+
+.crm-shell .dialog {
+  color: #17263a;
+  background: #fff;
+}
+
+.overview-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 30px;
+  margin-bottom: 26px;
+}
+
+.overview-heading h1 {
+  max-width: none;
+  margin: 4px 0 8px;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: clamp(28px, 3vw, 40px);
+  font-weight: 760;
+  letter-spacing: -0.035em;
+}
+
+.overview-heading p,
+.overview-heading time {
+  margin: 0;
+  color: #718096;
+  font-size: 13px;
+}
+
+.overview-kicker {
+  color: #315eea !important;
+  font-size: 11px !important;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.overview-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.overview-metrics > a {
+  position: relative;
+  min-height: 142px;
+  display: flex;
+  flex-direction: column;
+  padding: 19px;
+  border: 1px solid #e0e6ee;
+  border-radius: 12px;
+  color: #17263a;
+  background: #fff;
+  box-shadow: 0 5px 18px rgba(30, 54, 82, 0.04);
+  text-decoration: none;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.overview-metrics > a:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(30, 54, 82, 0.09);
+}
+
+.overview-metrics small {
+  color: #718096;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.overview-metrics strong {
+  margin-top: 12px;
+  color: #122137;
+  font-size: 30px;
+}
+
+.overview-metrics em {
+  margin-top: auto;
+  color: #35a877;
+  font-size: 10px;
+  font-style: normal;
+}
+
+.overview-metric__icon {
+  position: absolute;
+  top: 17px;
+  right: 17px;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  color: #315eea;
+  background: #edf2ff;
+  font-size: 17px;
+}
+
+.overview-metric__icon--green { color: #1d9b72; background: #e8f8f1; }
+.overview-metric__icon--orange { color: #e28a27; background: #fff3e2; }
+.overview-metric__icon--violet { color: #7959d8; background: #f0ecff; }
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.overview-panel {
+  min-height: 310px;
+  padding: 20px;
+  border: 1px solid #e0e6ee;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 5px 18px rgba(30, 54, 82, 0.04);
+}
+
+.overview-panel__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #edf0f4;
+}
+
+.overview-panel__heading span,
+.overview-quick-actions span {
+  color: #8490a0;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.overview-panel__heading h2,
+.overview-quick-actions h2 {
+  margin: 4px 0 0;
+  font-size: 16px;
+}
+
+.overview-panel__heading > a {
+  color: #315eea;
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.age-chart {
+  height: 218px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  gap: 12px;
+  padding: 32px 12px 0;
+  background: repeating-linear-gradient(to top, #edf1f6 0 1px, transparent 1px 54px);
+}
+
+.age-chart > div {
+  height: 100%;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.age-chart > div > span {
+  width: min(46px, 72%);
+  min-height: 18px;
+  border-radius: 5px 5px 0 0;
+  background: linear-gradient(#5e83f3, #315eea);
+}
+
+.age-chart strong,
+.age-chart small {
+  font-size: 10px;
+}
+
+.age-chart small { color: #768398; }
+
+.upcoming-list article {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  gap: 13px;
+  padding: 15px 0;
+  border-bottom: 1px solid #edf0f4;
+}
+
+.upcoming-list time,
+.upcoming-list article > div {
+  display: grid;
+  gap: 4px;
+}
+
+.upcoming-list time {
+  padding-right: 12px;
+  border-right: 1px solid #e3e8ef;
+}
+
+.upcoming-list time strong { color: #315eea; font-size: 12px; text-transform: capitalize; }
+.upcoming-list time span,
+.upcoming-list article > div span { color: #7b8798; font-size: 10px; }
+.upcoming-list article > div strong { font-size: 12px; }
+
+.overview-empty {
+  min-height: 190px;
+  display: grid;
+  place-items: center;
+  color: #8490a0;
+  font-size: 12px;
+  text-align: center;
+}
+
+.overview-quick-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 20px;
+  border: 1px solid #dfe6ef;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.overview-quick-actions > div:last-child {
+  display: flex;
+  gap: 10px;
+}
+
+@media (max-width: 1050px) {
+  .overview-metrics { grid-template-columns: 1fr 1fr; }
+  .overview-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 860px) {
+  .crm-shell .academy-workspace { display: block; }
+  .crm-shell .academy-sidebar { min-height: 0; padding: 16px; }
+  .academy-sidebar__brand { display: none; }
+  .crm-shell .academy-sidebar__identity { border-top: 0; }
+  .crm-shell .academy-sidebar nav { display: flex; overflow-x: auto; }
+  .crm-shell .academy-sidebar nav a { flex: 0 0 auto; }
+  .academy-sidebar__footer { display: none; }
+}
+
+@media (max-width: 620px) {
+  .crm-topbar { padding: 0 18px; }
+  .crm-topbar > div:first-child { display: none; }
+  .crm-shell .workspace-page { padding: 24px 16px; }
+  .overview-heading { align-items: flex-start; flex-direction: column; gap: 10px; }
+  .overview-metrics { grid-template-columns: 1fr; }
+  .overview-quick-actions { align-items: stretch; flex-direction: column; }
+  .overview-quick-actions > div:last-child { flex-direction: column; }
+}
+
 .members-toolbar {
   display: grid;
   grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) auto;

@@ -1,10 +1,11 @@
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../features/auth/model/useAuth'
 import { BrandMark } from '../../shared/ui/BrandMark'
 
 export function AppLayout() {
   const { account, academies, isAuthenticated, signOut } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const hasStaffAccess = academies.some((academy) =>
     academy.roles.includes('ADMIN') || academy.roles.includes('COACH'))
   const hasParentAccess = academies.some((academy) => academy.roles.includes('PARENT'))
@@ -12,6 +13,10 @@ export function AppLayout() {
   const handleSignOut = () => {
     signOut()
     navigate('/')
+  }
+
+  if (location.pathname.startsWith('/academy')) {
+    return <div className="crm-shell"><Outlet /></div>
   }
 
   return (
