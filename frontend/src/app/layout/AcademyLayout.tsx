@@ -56,9 +56,15 @@ export function AcademyLayout() {
             <span>Рабочее пространство</span>
             <strong>{academy.name}</strong>
           </div>
-          <div className="crm-account">
-            <span className="crm-account__avatar">{account?.fullName?.slice(0, 1).toUpperCase() || 'J'}</span>
-            <div><strong>{account?.fullName || 'Пользователь'}</strong><span>{canManage ? 'Администратор' : 'Тренер'}</span></div>
+          <div className="crm-topbar__right">
+            <div className="crm-account">
+              <span className="crm-account__avatar">{account?.fullName?.slice(0, 1).toUpperCase() || 'J'}</span>
+              <div><strong>{account?.fullName || 'Пользователь'}</strong><span>{canManage ? 'Администратор' : 'Тренер'}</span></div>
+            </div>
+            <div className="crm-mobile-actions" aria-label="Действия аккаунта">
+              <NavLink to="/dashboard">Кабинет</NavLink>
+              <button type="button" onClick={handleSignOut}>Выйти</button>
+            </div>
           </div>
         </header>
         <Outlet />
