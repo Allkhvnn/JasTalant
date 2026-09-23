@@ -2210,7 +2210,7 @@ footer {
     display: none;
   }
 
-  .topbar__nav > .topbar__mobile-dashboard {
+  .topbar__nav > a.topbar__mobile-dashboard {
     display: inline-flex;
   }
 
