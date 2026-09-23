@@ -1,0 +1,82 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-jastalant}
+      POSTGRES_USER: ${DB_USERNAME:-jastalant}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in the production environment file}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - internal
+
+  backend:
+    image: ${BACKEND_IMAGE:-jastalant-backend:local}
+    build:
+      context: ./backend
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-jastalant}
+      DB_USERNAME: ${DB_USERNAME:-jastalant}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in the production environment file}
+      JWT_SECRET_BASE64: ${JWT_SECRET_BASE64:?Set JWT_SECRET_BASE64 in the production environment file}
+      FRONTEND_URL: ${FRONTEND_URL:?Set FRONTEND_URL in the production environment file}
+      MAIL_FROM: ${MAIL_FROM:?Set MAIL_FROM in the production environment file}
+      SMTP_HOST: ${SMTP_HOST:?Set SMTP_HOST in the production environment file}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:?Set SMTP_USERNAME in the production environment file}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:?Set SMTP_PASSWORD in the production environment file}
+      SMTP_AUTH: ${SMTP_AUTH:-true}
+      SMTP_STARTTLS: ${SMTP_STARTTLS:-true}
+      SMTP_TEST_CONNECTION: ${SMTP_TEST_CONNECTION:-true}
+      AUTH_REFRESH_COOKIE_SECURE: "true"
+      AUTH_REFRESH_DAYS: ${AUTH_REFRESH_DAYS:-30}
+      DB_POOL_SIZE: ${DB_POOL_SIZE:-10}
+      DB_POOL_MIN_IDLE: ${DB_POOL_MIN_IDLE:-2}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/actuator/health/readiness"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+    read_only: true
+    tmpfs:
+      - /tmp
+    networks:
+      - internal
+
+  frontend:
+    image: ${FRONTEND_IMAGE:-jastalant-frontend:local}
+    build:
+      context: ./frontend
+    restart: unless-stopped
+    ports:
+      - "${APP_BIND_ADDRESS:-127.0.0.1}:${APP_PORT:-8080}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://localhost/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal
+
+volumes:
+  postgres_data:
+
+networks:
+  internal:
+    driver: bridge

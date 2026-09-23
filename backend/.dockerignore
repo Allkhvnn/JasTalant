@@ -1,0 +1,8 @@
+.gradle
+.gradle-cache
+build
+out
+.env
+.env.*
+docs
+*.iml
