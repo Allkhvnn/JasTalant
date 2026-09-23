@@ -41,8 +41,10 @@ export function PlatformApplicationsPage() {
   const [status, setStatus] = useState<ApplicationStatus>('PENDING')
   const [page, setPage] = useState(0)
   const [result, setResult] = useState<AcademyApplicationPage | null>(null)
+  const [counts, setCounts] = useState<Partial<Record<ApplicationStatus, number>>>({})
   const [loading, setLoading] = useState(true)
   const [actionId, setActionId] = useState<string | null>(null)
+  const [approvalTarget, setApprovalTarget] = useState<AcademyApplication | null>(null)
   const [rejectionTarget, setRejectionTarget] = useState<AcademyApplication | null>(null)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
@@ -69,6 +71,20 @@ export function PlatformApplicationsPage() {
   }, [page, reloadKey, status, token])
 
   useEffect(() => {
+    if (!token) return
+    let cancelled = false
+    Promise.all(filters.map(async (filter) => ({
+      status: filter.value,
+      total: (await getApplications(token, filter.value, 0, 1)).totalElements,
+    })))
+      .then((items) => {
+        if (!cancelled) setCounts(Object.fromEntries(items.map((item) => [item.status, item.total])))
+      })
+      .catch(() => undefined)
+    return () => { cancelled = true }
+  }, [reloadKey, token])
+
+  useEffect(() => {
     if (!rejectionTarget) return
 
     const closeOnEscape = (event: KeyboardEvent) => {
@@ -77,6 +93,15 @@ export function PlatformApplicationsPage() {
     document.addEventListener('keydown', closeOnEscape)
     return () => document.removeEventListener('keydown', closeOnEscape)
   }, [actionId, rejectionTarget])
+
+  useEffect(() => {
+    if (!approvalTarget) return
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !actionId) setApprovalTarget(null)
+    }
+    document.addEventListener('keydown', closeOnEscape)
+    return () => document.removeEventListener('keydown', closeOnEscape)
+  }, [actionId, approvalTarget])
 
   const selectStatus = (nextStatus: ApplicationStatus) => {
     if (nextStatus === status) return
@@ -106,17 +131,13 @@ export function PlatformApplicationsPage() {
 
   const handleApprove = async (application: AcademyApplication) => {
     if (!token) return
-    const confirmed = window.confirm(
-      `Одобрить академию «${application.academyName}»? Будет создана академия и доступ администратора.`,
-    )
-    if (!confirmed) return
-
     setActionId(application.id)
     setError('')
     setNotice('')
     try {
       await approveApplication(token, application.id)
       setNotice(`Академия «${application.academyName}» одобрена.`)
+      setApprovalTarget(null)
       refreshAfterAction()
     } catch (requestError) {
       setError(errorMessage(requestError))
@@ -173,7 +194,8 @@ export function PlatformApplicationsPage() {
             aria-selected={status === filter.value}
             onClick={() => selectStatus(filter.value)}
           >
-            {filter.label}
+            <span>{filter.label}</span>
+            <strong className="status-filter__count">{counts[filter.value] ?? '—'}</strong>
           </button>
         ))}
       </div>
@@ -229,7 +251,7 @@ export function PlatformApplicationsPage() {
                     className="button"
                     type="button"
                     disabled={Boolean(actionId)}
-                    onClick={() => void handleApprove(application)}
+                    onClick={() => setApprovalTarget(application)}
                   >
                     {actionId === application.id ? 'Обрабатываем…' : 'Одобрить'}
                   </button>
@@ -273,6 +295,35 @@ export function PlatformApplicationsPage() {
             Далее
           </button>
         </nav>
+      )}
+
+      {approvalTarget && (
+        <div
+          className="dialog-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !actionId) setApprovalTarget(null)
+          }}
+        >
+          <div className="dialog" role="dialog" aria-modal="true" aria-labelledby="approve-title">
+            <div className="dialog__heading">
+              <div>
+                <p className="eyebrow">Подтверждение решения</p>
+                <h2 id="approve-title">Одобрить «{approvalTarget.academyName}»?</h2>
+              </div>
+              <button className="dialog__close" type="button" aria-label="Закрыть" onClick={() => setApprovalTarget(null)}>×</button>
+            </div>
+            <p className="dialog__description">
+              Будет создана новая академия, а заявитель {approvalTarget.applicantName} получит роль администратора.
+            </p>
+            <div className="dialog__actions">
+              <button className="button button--secondary" type="button" onClick={() => setApprovalTarget(null)}>Отмена</button>
+              <button className="button" type="button" disabled={actionId === approvalTarget.id} onClick={() => void handleApprove(approvalTarget)}>
+                {actionId === approvalTarget.id ? 'Создаём академию…' : 'Одобрить и создать'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {rejectionTarget && (

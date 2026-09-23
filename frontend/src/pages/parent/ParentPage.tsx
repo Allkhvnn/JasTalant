@@ -231,6 +231,9 @@ export function ParentPage() {
                     <span>{label}</span>
                     <strong>{development[0][key].toFixed(1)}</strong>
                     <small>из 10</small>
+                    <span className="parent-development-bar" aria-hidden="true">
+                      <i style={{ width: `${development[0][key] * 10}%` }} />
+                    </span>
                   </div>
                 ))}
               </div>

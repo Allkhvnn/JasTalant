@@ -67,6 +67,10 @@ footer {
   font-weight: 600;
 }
 
+.topbar__mobile-dashboard {
+  display: none;
+}
+
 .topbar__nav a {
   text-decoration: none;
 }
@@ -793,6 +797,24 @@ h1 span {
   cursor: pointer;
 }
 
+.status-filter__count {
+  min-width: 22px;
+  height: 22px;
+  display: inline-grid;
+  place-items: center;
+  margin-left: 8px;
+  padding: 0 6px;
+  border-radius: 999px;
+  color: inherit;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 10px;
+}
+
+.status-filter--active .status-filter__count {
+  color: var(--ink);
+  background: rgba(7, 27, 20, 0.13);
+}
+
 .status-filter:hover {
   color: #fff;
   border-color: rgba(238, 247, 232, 0.3);
@@ -1007,6 +1029,13 @@ h1 span {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+}
+
+.dialog__description {
+  margin: -5px 0 28px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.65;
 }
 
 .dialog--wide {
@@ -1935,6 +1964,22 @@ h1 span {
   font-size: 24px;
 }
 
+.parent-development-bar {
+  height: 5px;
+  display: block;
+  overflow: hidden;
+  margin-top: 12px;
+  border-radius: 999px;
+  background: rgba(238, 247, 232, 0.1);
+}
+
+.parent-development-bar i {
+  height: 100%;
+  display: block;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--lime), #56bf9a);
+}
+
 .parent-section-heading {
   margin-bottom: 20px;
 }
@@ -2163,6 +2208,10 @@ footer {
   .topbar__account,
   .topbar__nav > a:not(.button) {
     display: none;
+  }
+
+  .topbar__nav > .topbar__mobile-dashboard {
+    display: inline-flex;
   }
 
   .topbar__nav {

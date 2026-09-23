@@ -28,6 +28,7 @@ export function AppLayout() {
         <nav className="topbar__nav" aria-label="Основная навигация">
           {isAuthenticated ? (
             <>
+              <NavLink className="topbar__mobile-dashboard" to="/dashboard">Кабинет</NavLink>
               {account?.platformRole === 'SUPER_ADMIN' ? (
                 <NavLink to="/platform/applications">Заявки</NavLink>
               ) : (
