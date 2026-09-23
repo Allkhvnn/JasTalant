@@ -15,6 +15,10 @@ export function AppLayout() {
     navigate('/')
   }
 
+  if (location.pathname === '/') {
+    return <div className="landing-shell"><Outlet /></div>
+  }
+
   if (location.pathname.startsWith('/academy')) {
     return <div className="crm-shell"><Outlet /></div>
   }
