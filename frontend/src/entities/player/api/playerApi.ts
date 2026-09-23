@@ -14,6 +14,10 @@ export function getPlayers(
   return apiRequest<PageResponse<Player>>(`/api/academies/${academyId}/players?${query}`, { token })
 }
 
+export function getPlayer(token: string, academyId: string, playerId: string) {
+  return apiRequest<Player>(`/api/academies/${academyId}/players/${playerId}`, { token })
+}
+
 export function createPlayer(token: string, academyId: string, payload: PlayerPayload) {
   return apiRequest<Player>(`/api/academies/${academyId}/players`, {
     method: 'POST',
@@ -36,4 +40,3 @@ export function deletePlayer(token: string, academyId: string, playerId: string)
     token,
   })
 }
-

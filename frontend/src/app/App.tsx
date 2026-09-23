@@ -16,6 +16,7 @@ import { AcademyLayout } from './layout/AcademyLayout'
 import { AcademyOverviewPage } from '../pages/academy-overview/AcademyOverviewPage'
 import { GroupsPage } from '../pages/groups/GroupsPage'
 import { PlayersPage } from '../pages/players/PlayersPage'
+import { PlayerProfilePage } from '../pages/player-profile/PlayerProfilePage'
 import { InvitationsPage } from '../pages/invitations/InvitationsPage'
 import { AcceptInvitationPage } from '../pages/accept-invitation/AcceptInvitationPage'
 import { AttendancePage } from '../pages/attendance/AttendancePage'
@@ -124,6 +125,7 @@ function App() {
               <Route index element={<AcademyOverviewPage />} />
               <Route path="groups" element={<GroupsPage />} />
               <Route path="players" element={<PlayersPage />} />
+              <Route path="players/:playerId" element={<PlayerProfilePage />} />
               <Route path="attendance" element={<AttendancePage />} />
               <Route path="schedule" element={<SchedulePage />} />
               <Route path="development" element={<DevelopmentPage />} />

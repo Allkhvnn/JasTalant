@@ -227,16 +227,19 @@ export function PlayersPage() {
                   <dd>{player.parentPhone || 'Не указан'}</dd>
                 </div>
               </dl>
-              {canManage && (
-                <div className="player-card__actions">
+              <div className="player-card__actions">
+                <Link className="button button--small" to={`/academy/players/${player.id}`}>Открыть профиль</Link>
+                {canManage && (
+                  <>
                   <button className="button button--secondary button--small" type="button" disabled={Boolean(actionId)} onClick={() => setEditor(player)}>
                     Изменить
                   </button>
                   <button className="text-button text-button--danger" type="button" disabled={Boolean(actionId)} onClick={() => void handleDelete(player)}>
                     Удалить
                   </button>
-                </div>
-              )}
+                  </>
+                )}
+              </div>
             </article>
           ))}
         </div>
