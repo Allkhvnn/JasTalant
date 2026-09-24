@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   approveApplication,
   getApplications,
@@ -38,7 +39,10 @@ const dateFormatter = new Intl.DateTimeFormat('ru-RU', {
 
 export function PlatformApplicationsPage() {
   const { token } = useAuth()
-  const [status, setStatus] = useState<ApplicationStatus>('PENDING')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const requestedStatus = searchParams.get('status') as ApplicationStatus | null
+  const initialStatus = filters.some((filter) => filter.value === requestedStatus) ? requestedStatus! : 'PENDING'
+  const [status, setStatus] = useState<ApplicationStatus>(initialStatus)
   const [page, setPage] = useState(0)
   const [result, setResult] = useState<AcademyApplicationPage | null>(null)
   const [counts, setCounts] = useState<Partial<Record<ApplicationStatus, number>>>({})
@@ -106,6 +110,7 @@ export function PlatformApplicationsPage() {
   const selectStatus = (nextStatus: ApplicationStatus) => {
     if (nextStatus === status) return
     setStatus(nextStatus)
+    setSearchParams({ status: nextStatus }, { replace: true })
     setPage(0)
     setResult(null)
     setError('')

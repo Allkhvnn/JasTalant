@@ -1,11 +1,14 @@
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../features/auth/model/useAuth'
 import { BrandMark } from '../../shared/ui/BrandMark'
+import { LanguageSwitcher } from '../../shared/ui/LanguageSwitcher'
+import { useI18n } from '../../shared/i18n/useI18n'
 
 export function AppLayout() {
   const { account, academies, isAuthenticated, signOut } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const { t } = useI18n()
   const hasStaffAccess = academies.some((academy) =>
     academy.roles.includes('ADMIN') || academy.roles.includes('COACH'))
   const hasParentAccess = academies.some((academy) => academy.roles.includes('PARENT'))
@@ -32,27 +35,28 @@ export function AppLayout() {
         <nav className="topbar__nav" aria-label="Основная навигация">
           {isAuthenticated ? (
             <>
-              <NavLink className="topbar__mobile-dashboard" to="/dashboard">Кабинет</NavLink>
+              <NavLink className="topbar__mobile-dashboard" to="/dashboard">{t('common.dashboard')}</NavLink>
               {account?.platformRole === 'SUPER_ADMIN' ? (
-                <NavLink to="/platform/applications">Заявки</NavLink>
+                <NavLink to="/platform/applications">{t('common.applications')}</NavLink>
               ) : (
                 <>
-                  {hasStaffAccess && <NavLink to="/academy">CRM</NavLink>}
-                  {hasParentAccess && <NavLink to="/parent">Дети</NavLink>}
-                  {!academies.length && <NavLink to="/application">Заявка</NavLink>}
-                  <NavLink to="/dashboard">Кабинет</NavLink>
+                  {hasStaffAccess && <NavLink to="/academy">{t('common.crm')}</NavLink>}
+                  {hasParentAccess && <NavLink to="/parent">{t('common.children')}</NavLink>}
+                  {!academies.length && <NavLink to="/application">{t('common.application')}</NavLink>}
+                  <NavLink to="/dashboard">{t('common.dashboard')}</NavLink>
                 </>
               )}
-              <span className="topbar__account">{account?.fullName || 'Профиль'}</span>
-              <button className="text-button" type="button" onClick={handleSignOut}>
-                Выйти
-              </button>
+              <details className="account-menu">
+                <summary><span>{(account?.fullName || 'J').slice(0, 1).toUpperCase()}</span>{account?.fullName || t('common.profile')}<i>⌄</i></summary>
+                <div><Link to="/dashboard">{t('common.dashboard')}</Link><LanguageSwitcher /><button type="button" onClick={handleSignOut}>{t('common.logout')}</button></div>
+              </details>
             </>
           ) : (
             <>
-              <NavLink to="/login">Войти</NavLink>
+              <LanguageSwitcher compact />
+              <NavLink to="/login">{t('common.login')}</NavLink>
               <Link className="button button--small" to="/register">
-                Подключить академию
+                {t('common.connect')}
               </Link>
             </>
           )}
