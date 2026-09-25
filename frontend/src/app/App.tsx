@@ -9,6 +9,8 @@ import { HomePage } from '../pages/home/HomePage'
 import { LoginPage } from '../pages/login/LoginPage'
 import { NotFoundPage } from '../pages/not-found/NotFoundPage'
 import { PlatformApplicationsPage } from '../pages/platform-applications/PlatformApplicationsPage'
+import { PlatformAcademiesPage } from '../pages/platform-academies/PlatformAcademiesPage'
+import { PlatformAcademyPage } from '../pages/platform-academy/PlatformAcademyPage'
 import { RegisterPage } from '../pages/register/RegisterPage'
 import { VerifyEmailPage } from '../pages/verify-email/VerifyEmailPage'
 import { AppLayout } from './layout/AppLayout'
@@ -112,6 +114,8 @@ function App() {
                 </SuperAdminRoute>
               }
             />
+            <Route path="platform/academies" element={<SuperAdminRoute><PlatformAcademiesPage /></SuperAdminRoute>} />
+            <Route path="platform/academies/:academyId" element={<SuperAdminRoute><PlatformAcademyPage /></SuperAdminRoute>} />
             <Route
               path="academy"
               element={

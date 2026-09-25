@@ -27,7 +27,28 @@ public class Academy {
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private AcademyStatus status = AcademyStatus.ACTIVE;
+
+    @Column(length = 500)
+    private String statusReason;
+
+    private Instant statusChangedAt;
+
+    private UUID statusChangedBy;
+
+    @Version
+    private long version;
+
     public Academy(String name) {
         this.name = name == null ? null : name.strip();
+    }
+
+    public void changeStatus(AcademyStatus nextStatus, String reason, UUID actor, Instant changedAt) {
+        this.status = nextStatus;
+        this.statusReason = nextStatus == AcademyStatus.ACTIVE ? null : reason.strip();
+        this.statusChangedBy = actor;
+        this.statusChangedAt = changedAt;
     }
 }

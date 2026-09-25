@@ -41,9 +41,13 @@ public class AcademyPermissionService {
     public Scope resolve(UUID actor, UUID academyId) {
         var user = users.findById(actor).orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHENTICATED));
         if (!user.isEmailVerified()) throw new BusinessException(ErrorCode.FORBIDDEN, "Email must be verified");
+        var academy = academies.findById(academyId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "Academy not found"));
         if (user.getPlatformRole() == PlatformRole.SUPER_ADMIN) {
-            academies.findById(academyId).orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
             return new Scope(true, null, java.util.Set.of());
+        }
+        if (academy.getStatus() != kz.jastalant.backend.academy.entity.AcademyStatus.ACTIVE) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "Academy is not active");
         }
         var membership = memberships.findByAcademyIdAndUserId(academyId, actor)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "Academy not found"));

@@ -2,7 +2,7 @@ import type { Locale } from './I18nContext'
 
 const ru = {
   'common.dashboard': 'Кабинет', 'common.login': 'Войти', 'common.logout': 'Выйти',
-  'common.connect': 'Подключить академию', 'common.profile': 'Профиль', 'common.applications': 'Заявки',
+  'common.connect': 'Подключить академию', 'common.profile': 'Профиль', 'common.applications': 'Заявки', 'common.academies': 'Академии',
   'common.crm': 'CRM', 'common.children': 'Дети', 'common.application': 'Заявка',
   'home.nav.about': 'О проекте', 'home.nav.features': 'Возможности', 'home.nav.audience': 'Для кого',
   'home.nav.how': 'Как подключиться', 'home.openDashboard': 'Открыть кабинет',
@@ -43,6 +43,7 @@ const ru = {
   'dashboard.noAcademy': 'Академия ещё не подключена',
   'dashboard.noAcademyText': 'Откройте заявку, чтобы проверить её статус или заполнить данные.',
   'dashboard.viewApplication': 'Посмотреть заявку', 'dashboard.workspace': 'Рабочее пространство',
+  'dashboard.manageAcademies': 'Управлять академиями', 'dashboard.academyBreakdown': 'Активных: {active} · приостановлено: {suspended} · в архиве: {archived}',
 } as const
 
 type MessageKey = keyof typeof ru
@@ -50,7 +51,7 @@ type Messages = Record<MessageKey, string>
 
 const kk: Messages = {
   'common.dashboard': 'Кабинет', 'common.login': 'Кіру', 'common.logout': 'Шығу',
-  'common.connect': 'Академияны қосу', 'common.profile': 'Профиль', 'common.applications': 'Өтінімдер',
+  'common.connect': 'Академияны қосу', 'common.profile': 'Профиль', 'common.applications': 'Өтінімдер', 'common.academies': 'Академиялар',
   'common.crm': 'CRM', 'common.children': 'Балалар', 'common.application': 'Өтінім',
   'home.nav.about': 'Жоба туралы', 'home.nav.features': 'Мүмкіндіктер', 'home.nav.audience': 'Кімдер үшін',
   'home.nav.how': 'Қалай қосылуға болады', 'home.openDashboard': 'Кабинетті ашу',
@@ -91,11 +92,12 @@ const kk: Messages = {
   'dashboard.noAcademy': 'Академия әлі қосылмаған',
   'dashboard.noAcademyText': 'Күйін тексеру немесе деректерді толтыру үшін өтінімді ашыңыз.',
   'dashboard.viewApplication': 'Өтінімді көру', 'dashboard.workspace': 'Жұмыс кеңістігі',
+  'dashboard.manageAcademies': 'Академияларды басқару', 'dashboard.academyBreakdown': 'Белсенді: {active} · тоқтатылған: {suspended} · мұрағатта: {archived}',
 }
 
 const en: Messages = {
   'common.dashboard': 'Dashboard', 'common.login': 'Sign in', 'common.logout': 'Sign out',
-  'common.connect': 'Connect academy', 'common.profile': 'Profile', 'common.applications': 'Applications',
+  'common.connect': 'Connect academy', 'common.profile': 'Profile', 'common.applications': 'Applications', 'common.academies': 'Academies',
   'common.crm': 'CRM', 'common.children': 'Children', 'common.application': 'Application',
   'home.nav.about': 'About', 'home.nav.features': 'Features', 'home.nav.audience': 'For whom',
   'home.nav.how': 'How to join', 'home.openDashboard': 'Open dashboard',
@@ -136,6 +138,7 @@ const en: Messages = {
   'dashboard.noAcademy': 'The academy is not connected yet',
   'dashboard.noAcademyText': 'Open the application to check its status or complete the details.',
   'dashboard.viewApplication': 'View application', 'dashboard.workspace': 'Workspace',
+  'dashboard.manageAcademies': 'Manage academies', 'dashboard.academyBreakdown': 'Active: {active} · suspended: {suspended} · archived: {archived}',
 }
 
 export const messages: Record<Locale, Messages> = { kk, ru, en }

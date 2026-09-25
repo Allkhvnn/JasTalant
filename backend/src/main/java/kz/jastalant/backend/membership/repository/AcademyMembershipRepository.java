@@ -27,7 +27,7 @@ public interface AcademyMembershipRepository extends Repository<AcademyMembershi
     List<AcademyMembership> findAllByAcademyIdWithUserAndRoles(@Param("academyId") UUID academyId);
 
     @Query("select membership from AcademyMembership membership join fetch membership.academy "
-            + "where membership.user.id = :userId and membership.active = true "
+            + "where membership.user.id = :userId and membership.active = true and membership.academy.status = 'ACTIVE' "
             + "order by membership.academy.name, membership.id")
     List<AcademyMembership> findAllByUserIdWithAcademy(@Param("userId") UUID userId);
 
@@ -51,4 +51,6 @@ public interface AcademyMembershipRepository extends Repository<AcademyMembershi
               and :role member of membership.roles
             """)
     long countActiveByAcademyIdAndRole(@Param("academyId") UUID academyId, @Param("role") AcademyRole role);
+
+    long countByAcademyIdAndActiveTrue(UUID academyId);
 }

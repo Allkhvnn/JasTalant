@@ -179,6 +179,50 @@ class OnboardingTests {
     }
 
     @Test
+    void ownerCanSuspendInspectAndRestoreAcademyWithoutDeletingData() throws Exception {
+        String applicationId = register("lifecycle@example.kz");
+        verifyEmail(verificationCode(), 204);
+        String owner = ownerToken();
+        String approved = mvc.perform(post("/api/platform/applications/" + applicationId + "/approve")
+                        .header("Authorization", bearer(owner)))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        String academyId = JsonPath.read(approved, "$.academyId");
+        String administrator = login("lifecycle@example.kz");
+
+        mvc.perform(get("/api/platform/academies").header("Authorization", bearer(owner)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.items[0].status").value("ACTIVE"))
+                .andExpect(jsonPath("$.items[0].administrators[0].email").value("lifecycle@example.kz"));
+
+        String suspended = mvc.perform(put("/api/platform/academies/" + academyId + "/status")
+                        .header("Authorization", bearer(owner)).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"SUSPENDED\",\"reason\":\"Billing review\",\"version\":0}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUSPENDED"))
+                .andExpect(jsonPath("$.statusReason").value("Billing review"))
+                .andExpect(jsonPath("$.version").value(1))
+                .andReturn().getResponse().getContentAsString();
+        int suspendedVersion = JsonPath.read(suspended, "$.version");
+
+        mvc.perform(get("/api/auth/academies").header("Authorization", bearer(administrator)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(0));
+        mvc.perform(get("/api/academies/" + academyId).header("Authorization", bearer(administrator)))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/platform/academies/" + academyId).header("Authorization", bearer(owner)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("SUSPENDED"));
+
+        mvc.perform(put("/api/platform/academies/" + academyId + "/status")
+                        .header("Authorization", bearer(owner)).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"ACTIVE\",\"reason\":\"\",\"version\":" + suspendedVersion + "}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("ACTIVE"));
+        mvc.perform(get("/api/auth/academies").header("Authorization", bearer(administrator)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(1));
+        assertThat(jdbc.queryForObject("select count(*) from academies where id = ?", Integer.class, UUID.fromString(academyId)))
+                .isEqualTo(1);
+    }
+
+    @Test
     void applicantCannotReviewOrReadAnotherAcademy() throws Exception {
         String id = register("first@example.kz");
         verifyEmail(verificationCode(), 204);

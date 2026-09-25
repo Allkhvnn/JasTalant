@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getApplications } from '../../entities/application/api/applicationApi'
+import { getPlatformAcademies } from '../../entities/platform-academy/api/platformAcademyApi'
 import type { ApplicationStatus } from '../../entities/application/model/types'
 import { getGroups } from '../../entities/group/api/groupApi'
 import { getAcademyMembers } from '../../entities/membership/api/membershipApi'
@@ -21,6 +22,7 @@ export function DashboardPage() {
   const { account, academies, token } = useAuth()
   const { t } = useI18n()
   const [applicationCounts, setApplicationCounts] = useState<Record<string, number>>({})
+  const [academyCounts, setAcademyCounts] = useState<Record<string, number>>({})
   const [staffStats, setStaffStats] = useState<{ groups: number; players: number; trainings: number; coaches: number | null } | null>(null)
   const staff = academies.filter((academy) => academy.roles.includes('ADMIN') || academy.roles.includes('COACH'))
   const primaryStaff = staff[0]
@@ -28,8 +30,10 @@ export function DashboardPage() {
   useEffect(() => {
     if (account?.platformRole !== 'SUPER_ADMIN' || !token) return
     let cancelled = false
-    Promise.all(statuses.map(async (status) => [status, (await getApplications(token, status, 0, 1)).totalElements] as const))
-      .then((items) => { if (!cancelled) setApplicationCounts(Object.fromEntries(items)) }).catch(() => undefined)
+    Promise.all([
+      Promise.all(statuses.map(async (status) => [status, (await getApplications(token, status, 0, 1)).totalElements] as const)),
+      Promise.all((['ACTIVE', 'SUSPENDED', 'ARCHIVED'] as const).map(async (status) => [status, (await getPlatformAcademies(token, { status, size: 1 })).totalElements] as const)),
+    ]).then(([applications, academies]) => { if (!cancelled) { setApplicationCounts(Object.fromEntries(applications)); setAcademyCounts(Object.fromEntries(academies)) } }).catch(() => undefined)
     return () => { cancelled = true }
   }, [account?.platformRole, token])
 
@@ -49,7 +53,7 @@ export function DashboardPage() {
 
   if (account?.platformRole === 'SUPER_ADMIN') {
     const metrics = [['PENDING', 'dashboard.pending'], ['APPROVED', 'dashboard.approved'], ['REJECTED', 'dashboard.rejected'], ['EMAIL_UNVERIFIED', 'dashboard.unverified']] as const
-    return <section className="role-dashboard"><header className="role-dashboard__heading"><div><p>{t('dashboard.platform')}</p><h1>{t('dashboard.hello', { name: account.fullName })}</h1><span>{t('dashboard.subtitle')}</span></div><Link className="button" to="/platform/applications">{t('dashboard.review')}</Link></header><div className="role-dashboard__metrics">{metrics.map(([status, label]) => <Link to={`/platform/applications?status=${status}`} key={status}><span>{t(label)}</span><strong>{applicationCounts[status] ?? '—'}</strong><em>→</em></Link>)}</div><section className="role-dashboard__panel"><div><p>{t('dashboard.pending')}</p><h2>{applicationCounts.PENDING ?? '—'}</h2><span>{t('dashboard.review')}</span></div><Link className="button button--secondary" to="/platform/applications">{t('dashboard.review')}</Link></section></section>
+    return <section className="role-dashboard"><header className="role-dashboard__heading"><div><p>{t('dashboard.platform')}</p><h1>{t('dashboard.hello', { name: account.fullName })}</h1><span>{t('dashboard.subtitle')}</span></div><Link className="button" to="/platform/academies">{t('dashboard.manageAcademies')}</Link></header><div className="role-dashboard__metrics">{metrics.map(([status, label]) => <Link to={`/platform/applications?status=${status}`} key={status}><span>{t(label)}</span><strong>{applicationCounts[status] ?? '—'}</strong><em>→</em></Link>)}</div><section className="role-dashboard__panel role-dashboard__panel--platform"><div><p>{t('common.academies')}</p><h2>{(academyCounts.ACTIVE ?? 0) + (academyCounts.SUSPENDED ?? 0) + (academyCounts.ARCHIVED ?? 0)}</h2><span>{t('dashboard.academyBreakdown', { active: academyCounts.ACTIVE ?? '—', suspended: academyCounts.SUSPENDED ?? '—', archived: academyCounts.ARCHIVED ?? '—' })}</span></div><div className="role-dashboard__platform-actions"><Link className="button" to="/platform/academies">{t('dashboard.manageAcademies')}</Link><Link className="button button--secondary" to="/platform/applications">{t('dashboard.review')}</Link></div></section></section>
   }
 
   const parents = academies.filter((academy) => academy.roles.includes('PARENT'))

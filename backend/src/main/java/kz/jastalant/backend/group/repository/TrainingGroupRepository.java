@@ -15,6 +15,7 @@ public interface TrainingGroupRepository extends Repository<TrainingGroup, UUID>
     void delete(TrainingGroup group);
     Optional<TrainingGroup> findByAcademyIdAndId(UUID academyId, UUID id);
     Page<TrainingGroup> findAllByAcademyId(UUID academyId, Pageable pageable);
+    long countByAcademyId(UUID academyId);
     @Query("""
             select g from TrainingGroup g where g.academyId = :academyId and exists (
                 select c.id from GroupCoach c where c.academyId = :academyId
