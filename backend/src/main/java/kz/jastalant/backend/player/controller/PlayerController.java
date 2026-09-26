@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.*;
 import java.util.UUID;
 
 @RestController
@@ -43,5 +45,25 @@ public class PlayerController {
     @DeleteMapping("/{id}") @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID academyId, @PathVariable UUID id) {
         players.delete(UUID.fromString(jwt.getSubject()), academyId, id);
+    }
+
+    @GetMapping("/{id}/avatar")
+    public ResponseEntity<byte[]> avatar(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID academyId,
+            @PathVariable UUID id) {
+        var avatar = players.avatar(UUID.fromString(jwt.getSubject()), academyId, id);
+        return ResponseEntity.ok().contentType(MediaType.parseMediaType(avatar.contentType()))
+                .cacheControl(CacheControl.noCache()).eTag("\"" + avatar.version() + "\"").body(avatar.bytes());
+    }
+
+    @PutMapping(path = "/{id}/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public PlayerResponse updateAvatar(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID academyId,
+            @PathVariable UUID id, @RequestParam long version, @RequestPart("file") MultipartFile file) {
+        return players.updateAvatar(UUID.fromString(jwt.getSubject()), academyId, id, version, file);
+    }
+
+    @DeleteMapping("/{id}/avatar")
+    public PlayerResponse removeAvatar(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID academyId,
+            @PathVariable UUID id, @RequestParam long version) {
+        return players.removeAvatar(UUID.fromString(jwt.getSubject()), academyId, id, version);
     }
 }

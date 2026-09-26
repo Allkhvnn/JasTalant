@@ -13,6 +13,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
+import org.springframework.web.multipart.MultipartFile;
+import kz.jastalant.backend.common.dto.AvatarData;
+import kz.jastalant.backend.common.service.AvatarFiles;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +24,7 @@ public class PlayerService {
     private final PlayerRepository players;
     private final GroupService groups;
     private final AcademyPermissionService permissions;
+    private final AvatarFiles avatarFiles;
 
     public PageResponse<PlayerResponse> list(UUID actor, UUID academyId, UUID groupId, int page, int size) {
         var scope = permissions.resolve(actor, academyId);
@@ -69,6 +73,42 @@ public class PlayerService {
         permissions.resolve(actor, academyId).requireManager();
         players.delete(find(academyId, id));
         players.flush();
+    }
+
+    public AvatarData avatar(UUID actor, UUID academyId, UUID id) {
+        var scope = permissions.resolve(actor, academyId);
+        scope.requireStaff();
+        var player = find(academyId, id);
+        groups.requireVisible(scope, academyId, player.getGroupId());
+        if (!player.hasAvatar()) throw new BusinessException(ErrorCode.NOT_FOUND, "Avatar not found");
+        return new AvatarData(player.getAvatarData(), player.getAvatarContentType(), player.getVersion());
+    }
+
+    @Transactional
+    public PlayerResponse updateAvatar(UUID actor, UUID academyId, UUID id, long version, MultipartFile file) {
+        permissions.resolve(actor, academyId).requireManager();
+        var player = find(academyId, id);
+        requireVersion(player, version);
+        var avatar = avatarFiles.read(file);
+        player.updateAvatar(avatar.bytes(), avatar.contentType());
+        players.flush();
+        return PlayerMapper.toResponse(player);
+    }
+
+    @Transactional
+    public PlayerResponse removeAvatar(UUID actor, UUID academyId, UUID id, long version) {
+        permissions.resolve(actor, academyId).requireManager();
+        var player = find(academyId, id);
+        requireVersion(player, version);
+        player.removeAvatar();
+        players.flush();
+        return PlayerMapper.toResponse(player);
+    }
+
+    private void requireVersion(Player player, long version) {
+        if (player.getVersion() != version) {
+            throw new BusinessException(ErrorCode.CONFLICT, "Player has changed; reload it");
+        }
     }
 
     private Player find(UUID academyId, UUID id) {

@@ -53,6 +53,11 @@ const translatedDetails: Record<string, string> = {
   'Academy not found': 'Академия не найдена.',
   'The academy has changed; reload it before saving': 'Статус академии уже изменился. Обновите страницу и повторите действие.',
   'A reason is required for this status': 'Укажите причину изменения статуса академии.',
+  'Avatar file is required': 'Выберите фотографию.',
+  'Avatar must not exceed 2 MB': 'Размер фотографии не должен превышать 2 МБ.',
+  'Avatar must be a JPEG, PNG, or WebP image': 'Поддерживаются только JPEG, PNG и WebP.',
+  'Avatar could not be read': 'Не удалось прочитать фотографию.',
+  'Display name is required': 'Укажите имя участника.',
   'Academy member has changed; reload it before saving': 'Данные участника уже изменились. Обновите страницу и повторите сохранение.',
   'The academy must have at least one active administrator': 'В академии должен остаться хотя бы один активный администратор.',
   'Academy member not found': 'Участник академии не найден.',
@@ -113,6 +118,40 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
   }
 
   return payload as T
+}
+
+export async function apiMultipartRequest<T>(path: string, token: string, formData: FormData, method = 'PUT'): Promise<T> {
+  let response: Response
+  try {
+    response = await fetch(path, {
+      method,
+      credentials: 'same-origin',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    })
+  } catch {
+    throw new ApiError(0, 'Не удалось подключиться к серверу. Проверьте, запущен ли backend.')
+  }
+  if (!response.ok) await throwResponseError(response)
+  return response.json() as Promise<T>
+}
+
+export async function apiBlobRequest(path: string, token: string): Promise<Blob> {
+  let response: Response
+  try {
+    response = await fetch(path, { credentials: 'same-origin', headers: { Authorization: `Bearer ${token}` } })
+  } catch {
+    throw new ApiError(0, 'Не удалось подключиться к серверу. Проверьте, запущен ли backend.')
+  }
+  if (!response.ok) await throwResponseError(response)
+  return response.blob()
+}
+
+async function throwResponseError(response: Response): Promise<never> {
+  const contentType = response.headers.get('content-type')?.toLowerCase() || ''
+  const payload = contentType.includes('json') ? await response.json() as ProblemDetails : null
+  const detail = payload?.detail || payload?.title || `Сервер вернул ошибку ${response.status}.`
+  throw new ApiError(response.status, translatedDetails[detail] || detail)
 }
 
 export function errorMessage(error: unknown): string {

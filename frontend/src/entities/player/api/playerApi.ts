@@ -1,4 +1,4 @@
-import { apiRequest } from '../../../shared/api/apiClient'
+import { apiMultipartRequest, apiRequest } from '../../../shared/api/apiClient'
 import type { PageResponse } from '../../../shared/api/types'
 import type { Player, PlayerPayload } from '../model/types'
 
@@ -38,5 +38,19 @@ export function deletePlayer(token: string, academyId: string, playerId: string)
   return apiRequest<void>(`/api/academies/${academyId}/players/${playerId}`, {
     method: 'DELETE',
     token,
+  })
+}
+
+export function uploadPlayerAvatar(token: string, academyId: string, player: Player, file: File) {
+  const body = new FormData()
+  body.set('file', file)
+  return apiMultipartRequest<Player>(
+    `/api/academies/${academyId}/players/${player.id}/avatar?version=${player.version}`, token, body,
+  )
+}
+
+export function deletePlayerAvatar(token: string, academyId: string, player: Player) {
+  return apiRequest<Player>(`/api/academies/${academyId}/players/${player.id}/avatar?version=${player.version}`, {
+    method: 'DELETE', token,
   })
 }

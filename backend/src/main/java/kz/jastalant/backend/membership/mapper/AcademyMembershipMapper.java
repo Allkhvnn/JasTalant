@@ -22,10 +22,11 @@ public final class AcademyMembershipMapper {
         return new AcademyMemberView(
                 membership.getId(),
                 user.getId(),
-                user.getFullName(),
+                membership.effectiveName(),
                 user.getEmail(),
                 Set.copyOf(membership.getRoles()),
                 membership.isActive(),
+                membership.hasAvatar(),
                 membership.getVersion(),
                 membership.getCreatedAt()
         );

@@ -7,6 +7,7 @@ export type Player = {
   parentName: string | null
   parentPhone: string | null
   parentEmail: string | null
+  hasAvatar: boolean
   version: number
 }
 

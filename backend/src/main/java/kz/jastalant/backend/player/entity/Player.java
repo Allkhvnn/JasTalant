@@ -29,6 +29,10 @@ public class Player {
     private String parentPhone;
     @Column(length = 254)
     private String parentEmail;
+    @Column(columnDefinition = "bytea")
+    private byte[] avatarData;
+    @Column(length = 30)
+    private String avatarContentType;
     @Version
     private long version;
 
@@ -48,6 +52,18 @@ public class Player {
         String email = optional(parentEmail);
         this.parentEmail = email == null ? null : email.toLowerCase(Locale.ROOT);
     }
+
+    public void updateAvatar(byte[] data, String contentType) {
+        this.avatarData = data;
+        this.avatarContentType = contentType;
+    }
+
+    public void removeAvatar() {
+        this.avatarData = null;
+        this.avatarContentType = null;
+    }
+
+    public boolean hasAvatar() { return avatarData != null; }
 
     private static String optional(String value) { return value == null || value.isBlank() ? null : value.strip(); }
 }

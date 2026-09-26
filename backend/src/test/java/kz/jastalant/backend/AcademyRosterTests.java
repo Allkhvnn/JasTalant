@@ -18,6 +18,7 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.mock.web.MockMultipartFile;
 import org.testcontainers.junit.jupiter.*;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import java.time.LocalDate;
@@ -98,6 +99,50 @@ class AcademyRosterTests {
         mvc.perform(delete(base(a) + "/players/" + player).header("Authorization", tokenA)).andExpect(status().isNoContent());
         mvc.perform(get(base(a) + "/players/" + player).header("Authorization", tokenA)).andExpect(status().isNotFound());
         mvc.perform(delete(base(a) + "/groups/" + second).header("Authorization", tokenA)).andExpect(status().isNoContent());
+    }
+
+    @Test
+    void adminCanEditAcademyNamesAndManageProtectedAvatars() throws Exception {
+        String group = group(tokenA, a, "U12");
+        String player = player(tokenA, a, group);
+        byte[] png = new byte[]{(byte) 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3};
+        var image = new MockMultipartFile("file", "avatar.png", "text/plain", png);
+
+        mvc.perform(multipart(base(a) + "/players/" + player + "/avatar?version=0").file(image)
+                        .with(request -> { request.setMethod("PUT"); return request; })
+                        .header("Authorization", tokenA))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.hasAvatar").value(true))
+                .andExpect(jsonPath("$.version").value(1));
+        mvc.perform(get(base(a) + "/players/" + player + "/avatar").header("Authorization", tokenA))
+                .andExpect(status().isOk()).andExpect(content().contentType("image/png"))
+                .andExpect(content().bytes(png));
+        mvc.perform(get(base(b) + "/players/" + player + "/avatar").header("Authorization", tokenB))
+                .andExpect(status().isNotFound());
+        var invalid = new MockMultipartFile("file", "fake.png", "image/png", "not-an-image".getBytes());
+        mvc.perform(multipart(base(a) + "/players/" + player + "/avatar?version=1").file(invalid)
+                        .with(request -> { request.setMethod("PUT"); return request; })
+                        .header("Authorization", tokenA))
+                .andExpect(status().isBadRequest());
+        mvc.perform(delete(base(a) + "/players/" + player + "/avatar?version=1").header("Authorization", tokenA))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.hasAvatar").value(false))
+                .andExpect(jsonPath("$.version").value(2));
+
+        String memberPath = base(a) + "/members/" + coach.getId();
+        String renamed = mvc.perform(put(memberPath).header("Authorization", tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"version\":0,\"roles\":[\"COACH\",\"PARENT\"],\"active\":true,\"displayName\":\"Coach A\"}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.fullName").value("Coach A"))
+                .andExpect(jsonPath("$.version").value(1)).andReturn().getResponse().getContentAsString();
+        int membershipVersion = JsonPath.read(renamed, "$.version");
+        mvc.perform(multipart(memberPath + "/avatar?version=" + membershipVersion).file(image)
+                        .with(request -> { request.setMethod("PUT"); return request; })
+                        .header("Authorization", tokenA))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.hasAvatar").value(true));
+        mvc.perform(get(memberPath + "/avatar").header("Authorization", tokenA))
+                .andExpect(status().isOk()).andExpect(content().contentType("image/png"));
+        mvc.perform(get(base(b) + "/members/" + coach.getId() + "/avatar").header("Authorization", tokenB))
+                .andExpect(status().isNotFound());
+        assertThat(users.findById(coach.getId()).orElseThrow().getFullName()).isEqualTo("coach");
     }
 
     @Test

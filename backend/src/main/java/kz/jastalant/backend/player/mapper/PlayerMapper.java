@@ -16,6 +16,7 @@ public final class PlayerMapper {
     }
     public static PlayerResponse toResponse(Player player) {
         return new PlayerResponse(player.getId(), player.getAcademyId(), player.getGroupId(), player.getFullName(),
-                player.getDateOfBirth(), player.getParentName(), player.getParentPhone(), player.getParentEmail(), player.getVersion());
+                player.getDateOfBirth(), player.getParentName(), player.getParentPhone(), player.getParentEmail(),
+                player.hasAvatar(), player.getVersion());
     }
 }

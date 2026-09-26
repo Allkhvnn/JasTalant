@@ -12,6 +12,7 @@ import {
 import type { Player, PlayerPayload } from '../../entities/player/model/types'
 import { errorMessage } from '../../shared/api/apiClient'
 import type { PageResponse } from '../../shared/api/types'
+import { ProtectedAvatar } from '../../shared/ui/ProtectedAvatar'
 
 const PAGE_SIZE = 20
 
@@ -207,7 +208,9 @@ export function PlayersPage() {
           {result.items.map((player) => (
             <article className="player-card" key={player.id}>
               <div className="player-card__header">
-                <span className="player-card__avatar" aria-hidden="true">{player.fullName.slice(0, 1).toUpperCase()}</span>
+                <ProtectedAvatar className="player-card__avatar" name={player.fullName} token={token}
+                  hasAvatar={player.hasAvatar} version={player.version}
+                  path={`/api/academies/${academy.id}/players/${player.id}/avatar`} />
                 <div>
                   <h2>{player.fullName}</h2>
                   <p>{groupNames.get(player.groupId) || 'Группа'}</p>

@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useAcademy } from '../../entities/academy/model/useAcademy'
-import { getAcademyMembers, updateAcademyMember } from '../../entities/membership/api/membershipApi'
+import { deleteAcademyMemberAvatar, getAcademyMembers, updateAcademyMember, uploadAcademyMemberAvatar } from '../../entities/membership/api/membershipApi'
 import type { AcademyMember } from '../../entities/membership/model/types'
 import { errorMessage } from '../../shared/api/apiClient'
 import type { AcademyRole } from '../../shared/api/types'
+import { ProtectedAvatar } from '../../shared/ui/ProtectedAvatar'
 
 const roles: AcademyRole[] = ['ADMIN', 'COACH', 'PARENT']
 const roleLabels: Record<AcademyRole, string> = {
@@ -67,11 +68,17 @@ export function MembersPage() {
     setSaving(true)
     setError('')
     try {
-      await updateAcademyMember(token, academy.id, editor.userId, {
+      const data = new FormData(event.currentTarget)
+      const updated = await updateAcademyMember(token, academy.id, editor.userId, {
         version: editor.version,
         roles: selectedRoles,
         active,
+        displayName: String(data.get('displayName')).trim(),
       })
+      const avatar = data.get('avatar')
+      if (avatar instanceof File && avatar.size > 0) {
+        await uploadAcademyMemberAvatar(token, academy.id, updated, avatar)
+      }
       setEditor(null)
       setNotice(active ? 'Роли и доступ участника обновлены.' : 'Доступ участника отключён.')
       setLoading(true)
@@ -81,6 +88,17 @@ export function MembersPage() {
     } finally {
       setSaving(false)
     }
+  }
+
+  const removeAvatar = async () => {
+    if (!editor) return
+    setSaving(true); setError('')
+    try {
+      const updated = await deleteAcademyMemberAvatar(token, academy.id, editor)
+      setEditor(updated)
+      setNotice('Фотография участника удалена.')
+      setReloadKey((value) => value + 1)
+    } catch (requestError) { setError(errorMessage(requestError)) } finally { setSaving(false) }
   }
 
   return (
@@ -104,7 +122,9 @@ export function MembersPage() {
           <div className="member-list">
             {filtered.map((member) => (
               <article className={member.active ? 'member-card' : 'member-card member-card--disabled'} key={member.membershipId}>
-                <span className="member-card__avatar" aria-hidden="true">{member.fullName.slice(0, 1).toUpperCase()}</span>
+                <ProtectedAvatar className="member-card__avatar" name={member.fullName} token={token}
+                  hasAvatar={member.hasAvatar} version={member.version}
+                  path={`/api/academies/${academy.id}/members/${member.userId}/avatar`} />
                 <div className="member-card__identity"><h2>{member.fullName}</h2><p>{member.email}</p><div>{member.roles.map((role) => <span className="role-pill" key={role}>{roleLabels[role]}</span>)}</div></div>
                 <span className={member.active ? 'access-state access-state--active' : 'access-state'}>{member.active ? 'Активен' : 'Доступ отключён'}</span>
                 <button className="button button--secondary button--small" type="button" onClick={() => openEditor(member)}>Управлять</button>
@@ -119,6 +139,7 @@ export function MembersPage() {
             <div className="dialog__heading"><div><p className="eyebrow">Управление доступом</p><h2 id="member-dialog-title">{editor.fullName}</h2><span>{editor.email}</span></div><button className="dialog__close" type="button" aria-label="Закрыть" onClick={() => setEditor(null)}>×</button></div>
             <form onSubmit={handleSave}>
               {error && <div className="alert alert--error" role="alert">{error}</div>}
+              <div className="profile-photo-editor"><ProtectedAvatar className="profile-photo-editor__preview" name={editor.fullName} token={token} hasAvatar={editor.hasAvatar} version={editor.version} path={`/api/academies/${academy.id}/members/${editor.userId}/avatar`} /><label className="field"><span>Имя в академии</span><input name="displayName" defaultValue={editor.fullName} maxLength={200} required/><small>Отображается только внутри этой академии.</small></label><label className="field"><span>Фотография</span><input name="avatar" type="file" accept="image/jpeg,image/png,image/webp"/><small>JPEG, PNG или WebP, до 2 МБ.</small></label>{editor.hasAvatar && <button className="text-button text-button--danger" type="button" disabled={saving} onClick={() => void removeAvatar()}>Удалить фото</button>}</div>
               <div className="form-divider"><span>Роли</span></div>
               <div className="choice-grid choice-grid--three">
                 {roles.map((role) => <label className={selectedRoles.includes(role) ? 'choice-card choice-card--selected' : 'choice-card'} key={role}><input type="checkbox" checked={selectedRoles.includes(role)} onChange={() => toggleRole(role)} /><span><strong>{roleLabels[role]}</strong><small>{role === 'ADMIN' ? 'Управляет всей академией' : role === 'COACH' ? 'Работает с назначенными группами' : 'Видит данные связанных детей'}</small></span></label>)}

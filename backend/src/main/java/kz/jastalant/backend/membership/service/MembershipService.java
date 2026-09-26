@@ -18,6 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import org.springframework.web.multipart.MultipartFile;
+import kz.jastalant.backend.common.dto.AvatarData;
+import kz.jastalant.backend.common.service.AvatarFiles;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +28,7 @@ public class MembershipService {
     private final AcademyMembershipRepository memberships;
     private final AcademyPermissionService permissions;
     private final AcademyRepository academies;
+    private final AvatarFiles avatarFiles;
 
     @Transactional(readOnly = true)
     public List<AcademyMembershipView> mine(UUID userId) {
@@ -63,7 +67,53 @@ public class MembershipService {
             throw new BusinessException(ErrorCode.CONFLICT, "The academy must have at least one active administrator");
         }
         membership.update(Set.copyOf(request.roles()), request.active());
+        if (request.displayName() != null) {
+            try { membership.rename(request.displayName()); }
+            catch (IllegalArgumentException exception) {
+                throw new BusinessException(ErrorCode.INVALID_REQUEST, "Display name is required");
+            }
+        }
         memberships.flush();
         return AcademyMembershipMapper.toMemberView(membership);
+    }
+
+    @Transactional(readOnly = true)
+    public AvatarData avatar(UUID actor, UUID academyId, UUID userId) {
+        permissions.resolve(actor, academyId).requireManager();
+        var membership = find(academyId, userId);
+        if (!membership.hasAvatar()) throw new BusinessException(ErrorCode.NOT_FOUND, "Avatar not found");
+        return new AvatarData(membership.getAvatarData(), membership.getAvatarContentType(), membership.getVersion());
+    }
+
+    @Transactional
+    public AcademyMemberView updateAvatar(UUID actor, UUID academyId, UUID userId, long version, MultipartFile file) {
+        permissions.resolve(actor, academyId).requireManager();
+        var membership = find(academyId, userId);
+        requireVersion(membership.getVersion(), version);
+        var avatar = avatarFiles.read(file);
+        membership.updateAvatar(avatar.bytes(), avatar.contentType());
+        memberships.flush();
+        return AcademyMembershipMapper.toMemberView(membership);
+    }
+
+    @Transactional
+    public AcademyMemberView removeAvatar(UUID actor, UUID academyId, UUID userId, long version) {
+        permissions.resolve(actor, academyId).requireManager();
+        var membership = find(academyId, userId);
+        requireVersion(membership.getVersion(), version);
+        membership.removeAvatar();
+        memberships.flush();
+        return AcademyMembershipMapper.toMemberView(membership);
+    }
+
+    private kz.jastalant.backend.membership.entity.AcademyMembership find(UUID academyId, UUID userId) {
+        return memberships.findByAcademyIdAndUserId(academyId, userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "Academy member not found"));
+    }
+
+    private void requireVersion(long actual, long requested) {
+        if (actual != requested) {
+            throw new BusinessException(ErrorCode.CONFLICT, "Academy member has changed; reload it before saving");
+        }
     }
 }

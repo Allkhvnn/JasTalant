@@ -50,6 +50,15 @@ public class AcademyMembership {
     @Column(nullable = false)
     private boolean active = true;
 
+    @Column(length = 200)
+    private String displayName;
+
+    @Column(columnDefinition = "bytea")
+    private byte[] avatarData;
+
+    @Column(length = 30)
+    private String avatarContentType;
+
     @Version
     private long version;
 
@@ -88,4 +97,26 @@ public class AcademyMembership {
     public void activate() {
         this.active = true;
     }
+
+    public String effectiveName() {
+        return displayName == null ? user.getFullName() : displayName;
+    }
+
+    public void rename(String name) {
+        String normalized = name == null ? null : name.strip();
+        if (normalized == null || normalized.isBlank()) throw new IllegalArgumentException("Display name is required");
+        this.displayName = normalized;
+    }
+
+    public void updateAvatar(byte[] data, String contentType) {
+        this.avatarData = data;
+        this.avatarContentType = contentType;
+    }
+
+    public void removeAvatar() {
+        this.avatarData = null;
+        this.avatarContentType = null;
+    }
+
+    public boolean hasAvatar() { return avatarData != null; }
 }

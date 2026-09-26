@@ -85,7 +85,7 @@ public class PlatformAcademyService {
     private PlatformAcademyView toView(Academy academy) {
         var administrators = memberships.findAllByAcademyIdAndRoleWithUser(academy.getId(), AcademyRole.ADMIN)
                 .stream().map(membership -> new PlatformAcademyAdminView(membership.getUser().getId(),
-                        membership.getUser().getFullName(), membership.getUser().getEmail())).toList();
+                        membership.effectiveName(), membership.getUser().getEmail())).toList();
         return new PlatformAcademyView(academy.getId(), academy.getName(), academy.getStatus(),
                 academy.getStatusReason(), academy.getCreatedAt(), academy.getStatusChangedAt(),
                 academy.getStatusChangedBy(), academy.getVersion(), players.countByAcademyId(academy.getId()),

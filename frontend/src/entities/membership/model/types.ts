@@ -7,6 +7,7 @@ export type AcademyMember = {
   email: string
   roles: AcademyRole[]
   active: boolean
+  hasAvatar: boolean
   version: number
   createdAt: string
 }
@@ -15,4 +16,5 @@ export type AcademyMemberUpdate = {
   version: number
   roles: AcademyRole[]
   active: boolean
+  displayName?: string
 }

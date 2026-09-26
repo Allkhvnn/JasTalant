@@ -7,4 +7,5 @@ import java.time.Instant;
 import java.util.UUID;
 
 public record AcademyMemberView(UUID membershipId, UUID userId, String fullName, String email,
-                                Set<AcademyRole> roles, boolean active, long version, Instant createdAt) {}
+                                Set<AcademyRole> roles, boolean active, boolean hasAvatar,
+                                long version, Instant createdAt) {}
