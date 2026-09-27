@@ -18,6 +18,7 @@ public interface PlayerRepository extends Repository<Player, UUID> {
     Page<Player> findAllByAcademyId(UUID academyId, Pageable pageable);
     Page<Player> findAllByAcademyIdAndGroupId(UUID academyId, UUID groupId, Pageable pageable);
     List<Player> findAllByAcademyIdAndGroupIdOrderByFullNameAscIdAsc(UUID academyId, UUID groupId);
+    List<Player> findAllByAcademyIdOrderByFullNameAscIdAsc(UUID academyId);
     long countByAcademyId(UUID academyId);
     @Query("""
             select p from Player p where p.academyId = :academyId

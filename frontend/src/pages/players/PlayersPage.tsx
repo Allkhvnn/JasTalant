@@ -6,10 +6,14 @@ import type { AcademyGroup } from '../../entities/group/model/types'
 import {
   createPlayer,
   deletePlayer,
+  downloadPlayerTemplate,
+  downloadPlayers,
   getPlayers,
+  importPlayers,
   updatePlayer,
+  validatePlayerImport,
 } from '../../entities/player/api/playerApi'
-import type { Player, PlayerPayload } from '../../entities/player/model/types'
+import type { Player, PlayerImportResult, PlayerPayload } from '../../entities/player/model/types'
 import { errorMessage } from '../../shared/api/apiClient'
 import type { PageResponse } from '../../shared/api/types'
 import { ProtectedAvatar } from '../../shared/ui/ProtectedAvatar'
@@ -30,6 +34,24 @@ function latestBirthDate() {
   return `${year}-${month}-${day}`
 }
 
+const importMessages: Record<string, string> = {
+  'Group is required': 'Укажите группу.',
+  'Group does not belong to this academy': 'Группа не принадлежит этой академии.',
+  'Group was not found in this academy': 'Группа с таким названием не найдена.',
+  'Group name is ambiguous; use its UUID': 'Найдено несколько групп с таким названием — укажите UUID.',
+  'Use date format YYYY-MM-DD': 'Используйте формат даты ГГГГ-ММ-ДД.',
+  'Full name is required and must not exceed 200 characters': 'Укажите ФИО длиной до 200 символов.',
+  'Date of birth must be in the past': 'Дата рождения должна быть в прошлом.',
+  'Parent name must not exceed 200 characters': 'Имя родителя не должно превышать 200 символов.',
+  'Parent phone format is invalid': 'Неверный формат телефона родителя.',
+  'Parent email format is invalid': 'Неверный email родителя.',
+}
+
+const importFields: Record<string, string> = {
+  group: 'группа', full_name: 'ФИО', date_of_birth: 'дата рождения',
+  parent_name: 'имя родителя', parent_phone: 'телефон', parent_email: 'email',
+}
+
 export function PlayersPage() {
   const { academy, token } = useAcademy()
   const canManage = academy.roles.includes('ADMIN')
@@ -43,6 +65,11 @@ export function PlayersPage() {
   const [actionId, setActionId] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+  const [importOpen, setImportOpen] = useState(false)
+  const [importFile, setImportFile] = useState<File | null>(null)
+  const [importPreview, setImportPreview] = useState<PlayerImportResult | null>(null)
+  const [fileBusy, setFileBusy] = useState(false)
+  const [importError, setImportError] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -162,6 +189,66 @@ export function PlayersPage() {
     }
   }
 
+  const saveBlob = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleDownload = async (kind: 'template' | 'export', format: 'csv' | 'xlsx') => {
+    setFileBusy(true)
+    if (kind === 'template') setImportError('')
+    else setError('')
+    try {
+      const blob = kind === 'template'
+        ? await downloadPlayerTemplate(token, academy.id, format)
+        : await downloadPlayers(token, academy.id, format)
+      saveBlob(blob, `${kind === 'template' ? 'players-template' : 'players'}.${format}`)
+    } catch (requestError) {
+      if (kind === 'template') setImportError(errorMessage(requestError))
+      else setError(errorMessage(requestError))
+    } finally {
+      setFileBusy(false)
+    }
+  }
+
+  const handleImportFile = async (file: File | null) => {
+    setImportFile(file)
+    setImportPreview(null)
+    setImportError('')
+    if (!file) return
+    setFileBusy(true)
+    try {
+      setImportPreview(await validatePlayerImport(token, academy.id, file))
+    } catch (requestError) {
+      setImportError(errorMessage(requestError))
+    } finally {
+      setFileBusy(false)
+    }
+  }
+
+  const handleImport = async () => {
+    if (!importFile || !importPreview || importPreview.errors.length) return
+    setFileBusy(true)
+    setImportError('')
+    try {
+      const imported = await importPlayers(token, academy.id, importFile)
+      setNotice(`Импортировано игроков: ${imported.importedRows}.`)
+      setImportOpen(false)
+      setImportFile(null)
+      setImportPreview(null)
+      setPage(0)
+      reload()
+    } catch (requestError) {
+      setImportError(errorMessage(requestError))
+    } finally {
+      setFileBusy(false)
+    }
+  }
+
   const totalPages = result ? Math.ceil(result.totalElements / result.size) : 0
 
   return (
@@ -173,9 +260,27 @@ export function PlayersPage() {
           <p>Храните основные данные игрока и контакты родителя в его карточке.</p>
         </div>
         {canManage && (
-          <button className="button" type="button" disabled={!groups.length} onClick={() => setEditor('new')}>
-            Добавить игрока
-          </button>
+          <div className="workspace-actions">
+            <details className="file-menu">
+              <summary className="button button--secondary">Экспорт</summary>
+              <div className="file-menu__popover">
+                <button type="button" disabled={fileBusy} onClick={() => void handleDownload('export', 'xlsx')}>
+                  <strong>Excel XLSX</strong><span>Для работы в Excel и Google Sheets</span>
+                </button>
+                <button type="button" disabled={fileBusy} onClick={() => void handleDownload('export', 'csv')}>
+                  <strong>CSV</strong><span>Универсальный табличный формат</span>
+                </button>
+              </div>
+            </details>
+            <button className="button button--secondary" type="button" disabled={fileBusy || !groups.length} onClick={() => {
+              setImportError(''); setImportFile(null); setImportPreview(null); setImportOpen(true)
+            }}>
+              Импорт
+            </button>
+            <button className="button" type="button" disabled={!groups.length} onClick={() => setEditor('new')}>
+              Добавить игрока
+            </button>
+          </div>
         )}
       </div>
 
@@ -315,6 +420,66 @@ export function PlayersPage() {
                 <button className="button" type="submit" disabled={Boolean(actionId)}>{actionId ? 'Сохраняем…' : 'Сохранить'}</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {canManage && importOpen && (
+        <div className="dialog-backdrop" role="presentation" onMouseDown={(event) => {
+          if (event.target === event.currentTarget && !fileBusy) setImportOpen(false)
+        }}>
+          <div className="dialog dialog--wide" role="dialog" aria-modal="true" aria-labelledby="player-import-title">
+            <div className="dialog__heading">
+              <div>
+                <p className="eyebrow">Массовое добавление</p>
+                <h2 id="player-import-title">Импорт игроков</h2>
+              </div>
+              <button className="dialog__close" type="button" aria-label="Закрыть" disabled={fileBusy} onClick={() => setImportOpen(false)}>×</button>
+            </div>
+
+            {importError && <div className="alert alert--error" role="alert">{importError}</div>}
+
+            <div className="import-guide">
+              <strong>1. Скачайте и заполните шаблон</strong>
+              <p>Не меняйте названия колонок. Группу укажите её точным названием или UUID, дату рождения — в формате ГГГГ-ММ-ДД.</p>
+              <div className="inline-actions">
+                <button className="text-button" type="button" disabled={fileBusy} onClick={() => void handleDownload('template', 'xlsx')}>Шаблон XLSX</button>
+                <button className="text-button" type="button" disabled={fileBusy} onClick={() => void handleDownload('template', 'csv')}>Шаблон CSV</button>
+              </div>
+            </div>
+
+            <label className="import-dropzone">
+              <strong>2. Выберите заполненный файл</strong>
+              <span>{importFile ? importFile.name : 'CSV или XLSX, не более 5 МБ и 5000 строк'}</span>
+              <input type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                disabled={fileBusy} onChange={(event) => void handleImportFile(event.target.files?.[0] || null)} />
+            </label>
+
+            {fileBusy && <div className="import-status">Обрабатываем файл…</div>}
+            {importPreview && !fileBusy && (
+              <div className={`import-result ${importPreview.errors.length ? 'import-result--error' : 'import-result--success'}`}>
+                <strong>{importPreview.errors.length
+                  ? `Найдены ошибки: ${importPreview.errors.length}`
+                  : `Файл готов: ${importPreview.validRows} игроков`}</strong>
+                {importPreview.errors.length > 0 && (
+                  <div className="import-errors">
+                    {importPreview.errors.map((item, index) => (
+                      <p key={`${item.row}-${item.field}-${index}`}>
+                        <b>Строка {item.row}, {importFields[item.field] || item.field}:</b> {importMessages[item.message] || item.message}
+                      </p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="dialog__actions">
+              <button className="button button--secondary" type="button" disabled={fileBusy} onClick={() => setImportOpen(false)}>Отмена</button>
+              <button className="button" type="button" disabled={fileBusy || !importPreview || importPreview.errors.length > 0 || importPreview.validRows === 0}
+                onClick={() => void handleImport()}>
+                Импортировать {importPreview?.validRows || ''}
+              </button>
+            </div>
           </div>
         </div>
       )}

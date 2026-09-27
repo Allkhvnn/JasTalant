@@ -7,6 +7,7 @@ import org.springframework.data.domain.*;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
 import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 
 public interface TrainingGroupRepository extends Repository<TrainingGroup, UUID> {
@@ -15,6 +16,7 @@ public interface TrainingGroupRepository extends Repository<TrainingGroup, UUID>
     void delete(TrainingGroup group);
     Optional<TrainingGroup> findByAcademyIdAndId(UUID academyId, UUID id);
     Page<TrainingGroup> findAllByAcademyId(UUID academyId, Pageable pageable);
+    List<TrainingGroup> findAllByAcademyIdOrderByNameAscIdAsc(UUID academyId);
     long countByAcademyId(UUID academyId);
     @Query("""
             select g from TrainingGroup g where g.academyId = :academyId and exists (

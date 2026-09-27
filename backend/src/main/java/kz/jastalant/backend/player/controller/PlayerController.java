@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import kz.jastalant.backend.common.dto.PageResponse;
 import kz.jastalant.backend.player.dto.*;
 import kz.jastalant.backend.player.service.PlayerService;
+import kz.jastalant.backend.player.service.PlayerFileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -18,12 +19,31 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class PlayerController {
     private final PlayerService players;
+    private final PlayerFileService playerFiles;
 
     @GetMapping
     public PageResponse<PlayerResponse> list(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID academyId,
             @RequestParam(required = false) UUID groupId, @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         return players.list(UUID.fromString(jwt.getSubject()), academyId, groupId, page, size);
+    }
+
+    @GetMapping("/template")
+    public ResponseEntity<byte[]> template(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID academyId,
+            @RequestParam(defaultValue = "xlsx") String format) {
+        return download(playerFiles.template(UUID.fromString(jwt.getSubject()), academyId, format));
+    }
+
+    @GetMapping("/export")
+    public ResponseEntity<byte[]> export(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID academyId,
+            @RequestParam(defaultValue = "xlsx") String format) {
+        return download(playerFiles.export(UUID.fromString(jwt.getSubject()), academyId, format));
+    }
+
+    @PostMapping(path = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public PlayerImportResult importPlayers(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID academyId,
+            @RequestPart("file") MultipartFile file, @RequestParam(defaultValue = "true") boolean dryRun) {
+        return playerFiles.importPlayers(UUID.fromString(jwt.getSubject()), academyId, file, dryRun);
     }
 
     @GetMapping("/{id}")
@@ -65,5 +85,12 @@ public class PlayerController {
     public PlayerResponse removeAvatar(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID academyId,
             @PathVariable UUID id, @RequestParam long version) {
         return players.removeAvatar(UUID.fromString(jwt.getSubject()), academyId, id, version);
+    }
+
+    private ResponseEntity<byte[]> download(PlayerFile file) {
+        return ResponseEntity.ok().contentType(MediaType.parseMediaType(file.contentType()))
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.attachment().filename(file.filename(), java.nio.charset.StandardCharsets.UTF_8).build().toString())
+                .cacheControl(CacheControl.noStore()).body(file.bytes());
     }
 }

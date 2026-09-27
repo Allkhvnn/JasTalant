@@ -1229,6 +1229,137 @@ h1 span {
   gap: 28px;
 }
 
+.workspace-actions,
+.inline-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.workspace-actions {
+  justify-content: flex-end;
+}
+
+.file-menu {
+  position: relative;
+}
+
+.file-menu summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.file-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.file-menu[open] summary {
+  border-color: rgba(185, 255, 48, 0.42);
+}
+
+.file-menu__popover {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 270px;
+  padding: 7px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: #10263a;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.3);
+}
+
+.file-menu__popover button {
+  width: 100%;
+  display: grid;
+  gap: 3px;
+  padding: 12px;
+  border: 0;
+  border-radius: 8px;
+  color: #fff;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.file-menu__popover button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.file-menu__popover span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.import-guide {
+  margin-bottom: 18px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: rgba(16, 38, 58, 0.36);
+}
+
+.import-guide p {
+  margin: 7px 0 12px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.import-dropzone {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 22px;
+  border: 1px dashed rgba(185, 255, 48, 0.45);
+  border-radius: 13px;
+  background: rgba(185, 255, 48, 0.035);
+  cursor: pointer;
+}
+
+.import-dropzone span,
+.import-status {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.import-dropzone input {
+  margin-top: 5px;
+}
+
+.import-result {
+  margin-bottom: 18px;
+  padding: 16px;
+  border: 1px solid;
+  border-radius: 13px;
+}
+
+.import-result--success {
+  border-color: rgba(185, 255, 48, 0.28);
+  background: rgba(185, 255, 48, 0.06);
+}
+
+.import-result--error {
+  border-color: rgba(255, 122, 122, 0.3);
+  background: rgba(255, 122, 122, 0.06);
+}
+
+.import-errors {
+  max-height: 210px;
+  margin-top: 12px;
+  overflow: auto;
+}
+
+.import-errors p {
+  margin: 0;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .workspace-heading h1 {
   margin-bottom: 16px;
   font-size: clamp(38px, 5vw, 64px);
@@ -2230,6 +2361,11 @@ footer {
     flex-direction: column;
   }
 
+  .workspace-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
   .player-grid {
     grid-template-columns: 1fr;
   }
@@ -2348,6 +2484,20 @@ footer {
 
   .workspace-page {
     padding: 30px 18px;
+  }
+
+  .workspace-actions .button {
+    width: 100%;
+  }
+
+  .workspace-actions .file-menu {
+    width: 100%;
+  }
+
+  .file-menu__popover {
+    right: auto;
+    left: 0;
+    width: 100%;
   }
 
   .academy-sidebar nav a {

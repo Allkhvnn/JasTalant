@@ -1,6 +1,6 @@
-import { apiMultipartRequest, apiRequest } from '../../../shared/api/apiClient'
+import { apiBlobRequest, apiMultipartRequest, apiRequest } from '../../../shared/api/apiClient'
 import type { PageResponse } from '../../../shared/api/types'
-import type { Player, PlayerPayload } from '../model/types'
+import type { Player, PlayerImportResult, PlayerPayload } from '../model/types'
 
 export function getPlayers(
   token: string,
@@ -53,4 +53,28 @@ export function deletePlayerAvatar(token: string, academyId: string, player: Pla
   return apiRequest<Player>(`/api/academies/${academyId}/players/${player.id}/avatar?version=${player.version}`, {
     method: 'DELETE', token,
   })
+}
+
+export function validatePlayerImport(token: string, academyId: string, file: File) {
+  const body = new FormData()
+  body.set('file', file)
+  return apiMultipartRequest<PlayerImportResult>(
+    `/api/academies/${academyId}/players/import?dryRun=true`, token, body, 'POST',
+  )
+}
+
+export function importPlayers(token: string, academyId: string, file: File) {
+  const body = new FormData()
+  body.set('file', file)
+  return apiMultipartRequest<PlayerImportResult>(
+    `/api/academies/${academyId}/players/import?dryRun=false`, token, body, 'POST',
+  )
+}
+
+export function downloadPlayers(token: string, academyId: string, format: 'csv' | 'xlsx') {
+  return apiBlobRequest(`/api/academies/${academyId}/players/export?format=${format}`, token)
+}
+
+export function downloadPlayerTemplate(token: string, academyId: string, format: 'csv' | 'xlsx') {
+  return apiBlobRequest(`/api/academies/${academyId}/players/template?format=${format}`, token)
 }

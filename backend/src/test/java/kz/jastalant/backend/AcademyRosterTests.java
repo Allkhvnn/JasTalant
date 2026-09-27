@@ -146,6 +146,65 @@ class AcademyRosterTests {
     }
 
     @Test
+    void adminCanValidateImportAndExportPlayersWithoutCrossAcademyAccess() throws Exception {
+        group(tokenA, a, "U10 Academy");
+        String validCsv = "\uFEFFgroup;full_name;date_of_birth;parent_name;parent_phone;parent_email\r\n"
+                + "U10 Academy;New Player;2016-03-12;Parent;+77001234567;parent@example.kz\r\n";
+        var validFile = new MockMultipartFile("file", "players.csv", "text/csv",
+                validCsv.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+
+        mvc.perform(multipart(base(a) + "/players/import?dryRun=true").file(validFile)
+                        .header("Authorization", tokenA))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.totalRows").value(1))
+                .andExpect(jsonPath("$.validRows").value(1)).andExpect(jsonPath("$.importedRows").value(0))
+                .andExpect(jsonPath("$.errors.length()").value(0));
+        mvc.perform(get(base(a) + "/players").header("Authorization", tokenA))
+                .andExpect(jsonPath("$.totalElements").value(0));
+
+        String invalidCsv = validCsv.replace("2016-03-12", "not-a-date");
+        var invalidFile = new MockMultipartFile("file", "players.csv", "text/csv",
+                invalidCsv.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        mvc.perform(multipart(base(a) + "/players/import?dryRun=false").file(invalidFile)
+                        .header("Authorization", tokenA))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.validRows").value(0))
+                .andExpect(jsonPath("$.errors[0].row").value(2))
+                .andExpect(jsonPath("$.errors[0].field").value("date_of_birth"));
+        mvc.perform(get(base(a) + "/players").header("Authorization", tokenA))
+                .andExpect(jsonPath("$.totalElements").value(0));
+
+        mvc.perform(multipart(base(a) + "/players/import?dryRun=false").file(validFile)
+                        .header("Authorization", tokenA))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.importedRows").value(1));
+        mvc.perform(get(base(a) + "/players/export?format=csv").header("Authorization", tokenA))
+                .andExpect(status().isOk()).andExpect(content().contentTypeCompatibleWith("text/csv"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("New Player")));
+        byte[] template = mvc.perform(get(base(a) + "/players/template?format=xlsx").header("Authorization", tokenA))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", org.hamcrest.Matchers.containsString("players-template.xlsx")))
+                .andExpect(result -> assertThat(result.getResponse().getContentAsByteArray()).isNotEmpty())
+                .andReturn().getResponse().getContentAsByteArray();
+        var xlsxBytes = new java.io.ByteArrayOutputStream();
+        try (var workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook(new java.io.ByteArrayInputStream(template))) {
+            var row = workbook.getSheet("Players").createRow(1);
+            row.createCell(0).setCellValue("U10 Academy");
+            row.createCell(1).setCellValue("Excel Player");
+            row.createCell(2).setCellValue("2017-04-11");
+            workbook.write(xlsxBytes);
+        }
+        var xlsxFile = new MockMultipartFile("file", "players.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", xlsxBytes.toByteArray());
+        mvc.perform(multipart(base(a) + "/players/import?dryRun=true").file(xlsxFile)
+                        .header("Authorization", tokenA))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.validRows").value(1))
+                .andExpect(jsonPath("$.errors.length()").value(0));
+
+        mvc.perform(multipart(base(b) + "/players/import?dryRun=false").file(validFile)
+                        .header("Authorization", tokenA)).andExpect(status().isNotFound());
+        mvc.perform(get(base(a) + "/players/export?format=xlsx").header("Authorization", tokenCoach))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     void foreignIdsCannotBeUsedToReadModifyDeleteOrMoveData() throws Exception {
         String ownGroup = group(tokenA, a, "Own");
         String foreignGroup = group(tokenB, b, "Foreign");

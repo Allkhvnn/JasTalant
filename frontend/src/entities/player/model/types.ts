@@ -20,3 +20,16 @@ export type PlayerPayload = {
   parentEmail: string | null
 }
 
+export type PlayerImportError = {
+  row: number
+  field: string
+  message: string
+}
+
+export type PlayerImportResult = {
+  totalRows: number
+  validRows: number
+  importedRows: number
+  errors: PlayerImportError[]
+}
+

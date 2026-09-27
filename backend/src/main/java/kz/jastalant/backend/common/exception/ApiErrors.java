@@ -41,6 +41,6 @@ public class ApiErrors extends ResponseEntityExceptionHandler {
     protected ResponseEntity<Object> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException exception,
             HttpHeaders headers, HttpStatusCode status, WebRequest request) {
         return ResponseEntity.badRequest()
-                .body(ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Avatar must not exceed 2 MB"));
+                .body(ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Uploaded file must not exceed 5 MB"));
     }
 }
