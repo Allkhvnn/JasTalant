@@ -42,7 +42,7 @@ async function allGroups(token: string, academyId: string) {
 }
 
 export function SchedulePage() {
-  const { academy, token } = useAcademy()
+  const { academy, token, academyPath } = useAcademy()
   const canManage = academy.roles.includes('ADMIN')
   const [groups, setGroups] = useState<AcademyGroup[]>([])
   const [trainings, setTrainings] = useState<ScheduledTraining[]>([])
@@ -184,7 +184,7 @@ export function SchedulePage() {
                         <div className="training-card__details"><h3>{training.groupName}</h3><p>{training.coachName}</p><span>{training.location || 'Место не указано'}</span></div>
                         <div className="training-card__actions">
                           {training.status === 'CANCELLED' ? <span className="training-status">Отменена</span>
-                            : training.trainingDate <= dateValue(new Date()) && <Link className="button button--small" to={`/academy/attendance?trainingId=${training.id}&groupId=${training.groupId}&date=${training.trainingDate}`}>Посещаемость</Link>}
+                            : training.trainingDate <= dateValue(new Date()) && <Link className="button button--small" to={`${academyPath('attendance')}?trainingId=${training.id}&groupId=${training.groupId}&date=${training.trainingDate}`}>Посещаемость</Link>}
                           {canManage && <><button className="button button--secondary button--small" type="button" onClick={() => openEditor(training)}>Изменить</button><button className="text-button text-button--danger" type="button" disabled={saving} onClick={() => void handleDelete(training)}>Удалить</button></>}
                         </div>
                       </article>

@@ -12,6 +12,8 @@ export function AppLayout() {
   const hasStaffAccess = academies.some((academy) =>
     academy.roles.includes('ADMIN') || academy.roles.includes('COACH'))
   const hasParentAccess = academies.some((academy) => academy.roles.includes('PARENT'))
+  const firstStaffAcademy = academies.find((academy) =>
+    academy.roles.includes('ADMIN') || academy.roles.includes('COACH'))
 
   const handleSignOut = () => {
     signOut()
@@ -40,7 +42,7 @@ export function AppLayout() {
                 <><NavLink to="/platform/academies">{t('common.academies')}</NavLink><NavLink to="/platform/applications">{t('common.applications')}</NavLink></>
               ) : (
                 <>
-                  {hasStaffAccess && <NavLink to="/academy">{t('common.crm')}</NavLink>}
+                  {hasStaffAccess && firstStaffAcademy && <NavLink to={`/academy/${firstStaffAcademy.academyId}`}>{t('common.crm')}</NavLink>}
                   {hasParentAccess && <NavLink to="/parent">{t('common.children')}</NavLink>}
                   {!academies.length && <NavLink to="/application">{t('common.application')}</NavLink>}
                   <NavLink to="/dashboard">{t('common.dashboard')}</NavLink>

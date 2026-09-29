@@ -32,14 +32,8 @@ public class SecurityConfiguration {
                                 "/api/auth/refresh", "/api/auth/logout", "/api/auth/forgot-password", "/api/auth/reset-password",
                                 "/api/invitations/preview", "/api/invitations/accept-new").permitAll()
                         .requestMatchers("/api/platform/**").hasRole("SUPER_ADMIN")
-                        .requestMatchers("/api/academies/*/groups", "/api/academies/*/groups/**",
-                                "/api/academies/*/players", "/api/academies/*/players/**",
-                                "/api/academies/*/trainings", "/api/academies/*/trainings/**",
-                                "/api/academies/*/members", "/api/academies/*/members/**",
-                                "/api/academies/*/invitations", "/api/academies/*/invitations/**",
-                                "/api/academies/*/parent/**", "/api/academies/*/parents/**",
-                                "/api/invitations/accept").authenticated()
-                        .requestMatchers("/api/auth/me", "/api/auth/academies", "/api/auth/resend-verification", "/api/applications/mine", "/api/academies/*").authenticated()
+                        .requestMatchers("/api/academies/**", "/api/invitations/accept").authenticated()
+                        .requestMatchers("/api/auth/me", "/api/auth/academies", "/api/auth/resend-verification", "/api/applications/mine").authenticated()
                         .anyRequest().denyAll())
                 .oauth2ResourceServer(oauth -> oauth.jwt(jwt -> jwt.jwtAuthenticationConverter(token -> {
                     var user = users.findById(UUID.fromString(token.getSubject()))

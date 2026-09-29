@@ -53,7 +53,7 @@ const importFields: Record<string, string> = {
 }
 
 export function PlayersPage() {
-  const { academy, token } = useAcademy()
+  const { academy, token, academyPath } = useAcademy()
   const canManage = academy.roles.includes('ADMIN')
   const [groups, setGroups] = useState<AcademyGroup[]>([])
   const [result, setResult] = useState<PageResponse<Player> | null>(null)
@@ -304,7 +304,7 @@ export function PlayersPage() {
           <span>{canManage
             ? 'Каждый игрок должен состоять в одной из групп академии.'
             : 'После назначения группы здесь появится её состав.'}</span>
-          {canManage && <Link className="button" to="/academy/groups">Перейти к группам</Link>}
+          {canManage && <Link className="button" to={academyPath('groups')}>Перейти к группам</Link>}
         </div>
       ) : loading ? (
         <div className="list-state">Загружаем игроков…</div>
@@ -336,7 +336,7 @@ export function PlayersPage() {
                 </div>
               </dl>
               <div className="player-card__actions">
-                <Link className="button button--small" to={`/academy/players/${player.id}`}>Открыть профиль</Link>
+                <Link className="button button--small" to={academyPath(`players/${player.id}`)}>Открыть профиль</Link>
                 {canManage && (
                   <>
                   <button className="button button--secondary button--small" type="button" disabled={Boolean(actionId)} onClick={() => setEditor(player)}>

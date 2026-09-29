@@ -11,6 +11,10 @@ import java.util.List;
 import java.util.UUID;
 
 public interface PlayerRepository extends Repository<Player, UUID> {
+    interface BirthYearCount {
+        Integer getBirthYear();
+        long getPlayerCount();
+    }
     Player save(Player player);
     void flush();
     void delete(Player player);
@@ -20,6 +24,30 @@ public interface PlayerRepository extends Repository<Player, UUID> {
     List<Player> findAllByAcademyIdAndGroupIdOrderByFullNameAscIdAsc(UUID academyId, UUID groupId);
     List<Player> findAllByAcademyIdOrderByFullNameAscIdAsc(UUID academyId);
     long countByAcademyId(UUID academyId);
+    @Query("""
+            select count(p.id) from Player p where p.academyId = :academyId
+            and exists (select assignment.id from GroupCoach assignment
+                where assignment.academyId = :academyId and assignment.groupId = p.groupId
+                  and assignment.membership.id = :membershipId)
+            """)
+    long countAssigned(UUID academyId, UUID membershipId);
+
+    @Query("""
+            select year(p.dateOfBirth) as birthYear, count(p.id) as playerCount
+            from Player p where p.academyId = :academyId
+            group by year(p.dateOfBirth) order by year(p.dateOfBirth)
+            """)
+    List<BirthYearCount> countByBirthYear(UUID academyId);
+
+    @Query("""
+            select year(p.dateOfBirth) as birthYear, count(p.id) as playerCount
+            from Player p where p.academyId = :academyId
+            and exists (select assignment.id from GroupCoach assignment
+                where assignment.academyId = :academyId and assignment.groupId = p.groupId
+                  and assignment.membership.id = :membershipId)
+            group by year(p.dateOfBirth) order by year(p.dateOfBirth)
+            """)
+    List<BirthYearCount> countAssignedByBirthYear(UUID academyId, UUID membershipId);
     @Query("""
             select p from Player p where p.academyId = :academyId
             and exists (

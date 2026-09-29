@@ -3543,6 +3543,31 @@ footer {
   gap: 16px;
 }
 
+.academy-switcher {
+  display: grid;
+  gap: 3px;
+}
+
+.academy-switcher > span {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.academy-switcher select {
+  max-width: 240px;
+  height: 36px;
+  padding: 0 32px 0 11px;
+  border: 1px solid #d8e0eb;
+  border-radius: 8px;
+  color: #25354a;
+  background: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .crm-mobile-actions {
   display: none;
   align-items: center;
@@ -3653,6 +3678,14 @@ footer {
 
   .crm-account > div {
     display: none;
+  }
+
+  .academy-switcher {
+    min-width: 0;
+  }
+
+  .academy-switcher select {
+    width: min(42vw, 190px);
   }
 
   .crm-mobile-actions a,

@@ -19,6 +19,14 @@ public interface TrainingGroupRepository extends Repository<TrainingGroup, UUID>
     List<TrainingGroup> findAllByAcademyIdOrderByNameAscIdAsc(UUID academyId);
     long countByAcademyId(UUID academyId);
     @Query("""
+            select count(g.id) from TrainingGroup g
+            where g.academyId = :academyId and exists (
+                select assignment.id from GroupCoach assignment
+                where assignment.academyId = :academyId and assignment.groupId = g.id
+                  and assignment.membership.id = :membershipId)
+            """)
+    long countAssigned(UUID academyId, UUID membershipId);
+    @Query("""
             select g from TrainingGroup g where g.academyId = :academyId and exists (
                 select c.id from GroupCoach c where c.academyId = :academyId
                 and c.groupId = g.id and c.membership.id = :membershipId)

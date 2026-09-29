@@ -56,7 +56,7 @@ function marksFromSheet(sheet: AttendanceSheet) {
 }
 
 export function AttendancePage() {
-  const { academy, token } = useAcademy()
+  const { academy, token, academyPath } = useAcademy()
   const [searchParams, setSearchParams] = useSearchParams()
   const [requestedGroupId] = useState(() => searchParams.get('groupId') || '')
   const [requestedTrainingId] = useState(() => searchParams.get('trainingId') || '')
@@ -225,7 +225,7 @@ export function AttendancePage() {
         <div className={sheet?.saved ? 'sheet-state sheet-state--saved' : 'sheet-state'}>
           {sheet?.saved ? `Сохранено · версия ${sheet.version}` : 'Новая ведомость'}
         </div>
-        {trainingId && <Link className="text-button" to="/academy/schedule">Вернуться в расписание</Link>}
+        {trainingId && <Link className="text-button" to={academyPath('schedule')}>Вернуться в расписание</Link>}
       </div>
 
       {groupsLoading ? (
@@ -236,7 +236,7 @@ export function AttendancePage() {
           <span>{academy.roles.includes('ADMIN')
             ? 'Для посещаемости нужна группа с игроками.'
             : 'Попросите администратора назначить вас тренером группы.'}</span>
-          {academy.roles.includes('ADMIN') && <Link className="button" to="/academy/groups">Перейти к группам</Link>}
+          {academy.roles.includes('ADMIN') && <Link className="button" to={academyPath('groups')}>Перейти к группам</Link>}
         </div>
       ) : sheetLoading ? (
         <div className="list-state">Открываем ведомость…</div>
@@ -244,7 +244,7 @@ export function AttendancePage() {
         <div className="list-state">
           <strong>В группе нет игроков</strong>
           <span>Добавьте игроков, прежде чем отмечать посещаемость.</span>
-          {academy.roles.includes('ADMIN') && <Link className="button" to="/academy/players">Добавить игроков</Link>}
+          {academy.roles.includes('ADMIN') && <Link className="button" to={academyPath('players')}>Добавить игроков</Link>}
         </div>
       ) : sheet ? (
         <>

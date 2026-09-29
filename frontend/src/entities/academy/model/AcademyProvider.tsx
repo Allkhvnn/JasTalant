@@ -1,15 +1,16 @@
 import { useMemo, type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../../../features/auth/model/useAuth'
 import { AcademyContext, type AcademyContextValue } from './AcademyContext'
 
 export function AcademyProvider({ children }: { children: ReactNode }) {
   const { academies, loading, token } = useAuth()
+  const { academyId = '' } = useParams()
 
   const value = useMemo<AcademyContextValue | null>(
     () => {
-      const membership = academies.find((item) => item.roles.includes('ADMIN'))
-        ?? academies.find((item) => item.roles.includes('COACH'))
+      const membership = academies.find((item) => item.academyId === academyId
+        && (item.roles.includes('ADMIN') || item.roles.includes('COACH')))
       return membership && token
         ? {
             academy: {
@@ -18,10 +19,12 @@ export function AcademyProvider({ children }: { children: ReactNode }) {
               roles: membership.roles,
             },
             token,
+            basePath: `/academy/${membership.academyId}`,
+            academyPath: (path = '') => `/academy/${membership.academyId}${path ? `/${path.replace(/^\//, '')}` : ''}`,
           }
         : null
     },
-    [academies, token],
+    [academies, academyId, token],
   )
 
   if (loading) {

@@ -42,7 +42,7 @@ function latestBirthDate() {
 
 export function PlayerProfilePage() {
   const { playerId = '' } = useParams()
-  const { academy, token } = useAcademy()
+  const { academy, token, academyPath } = useAcademy()
   const canManage = academy.roles.includes('ADMIN')
   const [player, setPlayer] = useState<Player | null>(null)
   const [groups, setGroups] = useState<AcademyGroup[]>([])
@@ -117,14 +117,14 @@ export function PlayerProfilePage() {
     return (
       <div className="workspace-page">
         <div className="alert alert--error" role="alert">{error || 'Игрок не найден.'}</div>
-        <Link className="button button--secondary" to="/academy/players">Вернуться к игрокам</Link>
+        <Link className="button button--secondary" to={academyPath('players')}>Вернуться к игрокам</Link>
       </div>
     )
   }
 
   return (
     <div className="workspace-page player-profile-page">
-      <Link className="profile-back" to="/academy/players">← Все игроки</Link>
+      <Link className="profile-back" to={academyPath('players')}>← Все игроки</Link>
 
       {error && <div className="alert alert--error" role="alert">{error}</div>}
       {notice && <div className="alert alert--success" role="status">{notice}</div>}
@@ -138,7 +138,7 @@ export function PlayerProfilePage() {
           <h1>{player.fullName}</h1>
           <div><span>{academy.name}</span><span>{groupName}</span><span>{ageFrom(player.dateOfBirth)} лет</span></div>
         </div>
-        <div className="player-profile-hero__actions">{canManage && <button className="button button--secondary" type="button" onClick={() => setEditing(true)}>Редактировать</button>}<Link className="button" to={`/academy/development?playerId=${player.id}`}>Открыть показатели</Link></div>
+        <div className="player-profile-hero__actions">{canManage && <button className="button button--secondary" type="button" onClick={() => setEditing(true)}>Редактировать</button>}<Link className="button" to={`${academyPath('development')}?playerId=${player.id}`}>Открыть показатели</Link></div>
       </section>
 
       <div className="player-profile-grid">
@@ -175,7 +175,7 @@ export function PlayerProfilePage() {
           ) : (
             <div className="profile-empty">
               <p>Для игрока ещё нет оценок развития.</p>
-              <Link to={`/academy/development?playerId=${player.id}`}>Добавить первую оценку</Link>
+              <Link to={`${academyPath('development')}?playerId=${player.id}`}>Добавить первую оценку</Link>
             </div>
           )}
         </section>

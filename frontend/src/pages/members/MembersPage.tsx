@@ -15,7 +15,7 @@ const roleLabels: Record<AcademyRole, string> = {
 }
 
 export function MembersPage() {
-  const { academy, token } = useAcademy()
+  const { academy, token, academyPath } = useAcademy()
   const [members, setMembers] = useState<AcademyMember[]>([])
   const [roleFilter, setRoleFilter] = useState<AcademyRole | ''>('')
   const [accessFilter, setAccessFilter] = useState<'ALL' | 'ACTIVE' | 'DISABLED'>('ALL')
@@ -105,7 +105,7 @@ export function MembersPage() {
     <div className="workspace-page members-page">
       <div className="workspace-heading workspace-heading--actions">
         <div><p className="eyebrow">Доступ к академии</p><h1>Участники</h1><p>Управляйте ролями и временно отключайте доступ без удаления истории.</p></div>
-        <Link className="button" to="/academy/invitations">Пригласить участника</Link>
+        <Link className="button" to={academyPath('invitations')}>Пригласить участника</Link>
       </div>
 
       {error && <div className="alert alert--error" role="alert">{error}</div>}

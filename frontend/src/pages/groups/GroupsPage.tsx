@@ -19,7 +19,7 @@ import type { PageResponse } from '../../shared/api/types'
 const PAGE_SIZE = 20
 
 export function GroupsPage() {
-  const { academy, token } = useAcademy()
+  const { academy, token, academyPath } = useAcademy()
   const canManage = academy.roles.includes('ADMIN')
   const [result, setResult] = useState<PageResponse<AcademyGroup> | null>(null)
   const [page, setPage] = useState(0)
@@ -214,7 +214,7 @@ export function GroupsPage() {
                 <p>Категория: {group.ageCategory}</p>
               </div>
               <div className="management-card__actions">
-                <Link className="button button--secondary button--small" to={`/academy/attendance?groupId=${group.id}`}>
+                <Link className="button button--secondary button--small" to={`${academyPath('attendance')}?groupId=${group.id}`}>
                   Посещаемость
                 </Link>
                 {canManage && (
@@ -355,7 +355,7 @@ export function GroupsPage() {
               <div className="list-state list-state--compact">
                 <strong>Нет доступных тренеров</strong>
                 <span>Сначала пригласите тренера и дождитесь принятия приглашения.</span>
-                <Link className="button" to="/academy/invitations" onClick={() => setCoachEditor(null)}>Перейти к приглашениям</Link>
+                <Link className="button" to={academyPath('invitations')} onClick={() => setCoachEditor(null)}>Перейти к приглашениям</Link>
               </div>
             )}
 

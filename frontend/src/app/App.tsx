@@ -62,11 +62,18 @@ function SuperAdminRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AcademyAdminRoute({ children }: { children: React.ReactNode }) {
-  const { academy } = useAcademy()
+  const { academy, academyPath } = useAcademy()
   if (!academy.roles.includes('ADMIN')) {
-    return <Navigate to="/academy/attendance" replace />
+    return <Navigate to={academyPath('attendance')} replace />
   }
   return children
+}
+
+function AcademyEntryRoute() {
+  const { academies, loading } = useAuth()
+  if (loading) return <div className="page-loader">Открываем академию…</div>
+  const academy = academies.find((item) => item.roles.includes('ADMIN') || item.roles.includes('COACH'))
+  return academy ? <Navigate to={`/academy/${academy.academyId}`} replace /> : <Navigate to="/dashboard" replace />
 }
 
 function App() {
@@ -118,6 +125,10 @@ function App() {
             <Route path="platform/academies/:academyId" element={<SuperAdminRoute><PlatformAcademyPage /></SuperAdminRoute>} />
             <Route
               path="academy"
+              element={<ProtectedRoute><AcademyEntryRoute /></ProtectedRoute>}
+            />
+            <Route
+              path="academy/:academyId"
               element={
                 <ProtectedRoute>
                   <AcademyProvider>

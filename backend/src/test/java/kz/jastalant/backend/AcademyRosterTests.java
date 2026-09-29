@@ -260,6 +260,38 @@ class AcademyRosterTests {
     }
 
     @Test
+    void dashboardUsesExactRoleScopeAndDatabaseAggregates() throws Exception {
+        String assigned = group(tokenA, a, "Assigned");
+        String other = group(tokenA, a, "Other");
+        player(tokenA, a, assigned);
+        player(tokenA, a, other);
+        mvc.perform(put(base(a) + "/groups/" + assigned + "/coaches/" + coach.getId())
+                        .header("Authorization", tokenA))
+                .andExpect(status().isNoContent());
+        training(tokenA, a, assigned, coach.getId(), LocalDate.now().plusDays(1).toString(),
+                "10:00", "11:00");
+
+        mvc.perform(get(base(a) + "/dashboard").header("Authorization", tokenA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.academyId").value(a.getId().toString()))
+                .andExpect(jsonPath("$.groupCount").value(2))
+                .andExpect(jsonPath("$.playerCount").value(2))
+                .andExpect(jsonPath("$.activeCoachCount").value(1))
+                .andExpect(jsonPath("$.upcomingTrainingCount").value(1))
+                .andExpect(jsonPath("$.ageDistribution[0].playerCount").value(2))
+                .andExpect(jsonPath("$.upcomingTrainings[0].groupId").value(assigned));
+
+        mvc.perform(get(base(a) + "/dashboard").header("Authorization", tokenCoach))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.groupCount").value(1))
+                .andExpect(jsonPath("$.playerCount").value(1))
+                .andExpect(jsonPath("$.activeCoachCount").doesNotExist())
+                .andExpect(jsonPath("$.upcomingTrainingCount").value(1));
+        mvc.perform(get(base(b) + "/dashboard").header("Authorization", tokenA))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     void assigningCoachRequiresCoachMembershipInSameAcademy() throws Exception {
         String group = group(tokenA, a, "Group");
         var foreignCoach = member(b, "foreign-coach", AcademyRole.COACH);
