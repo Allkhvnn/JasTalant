@@ -77,6 +77,34 @@ export function AcademyOverviewPage() {
             )) : <div className="overview-empty">На ближайшую неделю тренировок нет.</div>}
           </div>
         </section>
+
+        <section className="overview-panel overview-panel--attendance">
+          <div className="overview-panel__heading">
+            <div><span>Последние 30 дней</span><h2>Посещаемость</h2></div>
+            <Link to={academyPath('attendance')}>Открыть ведомости</Link>
+          </div>
+          <div className="attendance-summary">
+            <div className="attendance-summary__rate">
+              <strong>{stats ? `${stats.attendance.attendanceRate}%` : '—'}</strong>
+              <span>присутствовали или опоздали</span>
+              <small>{stats?.attendance.recordsMarked ?? 0} отметок в {stats?.attendance.sessionsRecorded ?? 0} ведомостях</small>
+            </div>
+            <div className="attendance-summary__statuses">
+              <div><span className="attendance-dot attendance-dot--present" />Присутствовали<strong>{stats?.attendance.presentCount ?? '—'}</strong></div>
+              <div><span className="attendance-dot attendance-dot--late" />Опоздали<strong>{stats?.attendance.lateCount ?? '—'}</strong></div>
+              <div><span className="attendance-dot attendance-dot--absent" />Отсутствовали<strong>{stats?.attendance.absentCount ?? '—'}</strong></div>
+              <div><span className="attendance-dot attendance-dot--excused" />Уважительная причина<strong>{stats?.attendance.excusedCount ?? '—'}</strong></div>
+            </div>
+            <div className={`attendance-summary__pending${stats?.attendance.pendingSheets ? ' attendance-summary__pending--warning' : ''}`}>
+              <span>Незаполненные ведомости</span>
+              <strong>{stats?.attendance.pendingSheets ?? '—'}</strong>
+              <p>{stats?.attendance.pendingSheets
+                ? 'Проверьте прошедшие тренировки за последние 7 дней.'
+                : 'Все прошедшие тренировки за неделю обработаны.'}</p>
+              <Link to={academyPath('schedule')}>{stats?.attendance.pendingSheets ? 'Проверить расписание' : 'Открыть расписание'} →</Link>
+            </div>
+          </div>
+        </section>
       </div>
 
       <section className="overview-quick-actions">

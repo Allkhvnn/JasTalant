@@ -263,21 +263,49 @@ class AcademyRosterTests {
     void dashboardUsesExactRoleScopeAndDatabaseAggregates() throws Exception {
         String assigned = group(tokenA, a, "Assigned");
         String other = group(tokenA, a, "Other");
-        player(tokenA, a, assigned);
-        player(tokenA, a, other);
+        String assignedPlayer = player(tokenA, a, assigned);
+        String otherPlayer = player(tokenA, a, other);
         mvc.perform(put(base(a) + "/groups/" + assigned + "/coaches/" + coach.getId())
+                        .header("Authorization", tokenA))
+                .andExpect(status().isNoContent());
+        User otherCoach = member(a, "dashboard-other-coach", AcademyRole.COACH);
+        mvc.perform(put(base(a) + "/groups/" + other + "/coaches/" + otherCoach.getId())
                         .header("Authorization", tokenA))
                 .andExpect(status().isNoContent());
         training(tokenA, a, assigned, coach.getId(), LocalDate.now().plusDays(1).toString(),
                 "10:00", "11:00");
+        String completedDate = LocalDate.now().minusDays(1).toString();
+        String assignedTraining = training(tokenA, a, assigned, coach.getId(), completedDate,
+                "10:00", "11:00");
+        String otherTraining = training(tokenA, a, other, otherCoach.getId(), completedDate,
+                "12:00", "13:00");
+        mvc.perform(put(base(a) + "/trainings/" + assignedTraining + "/attendance")
+                        .header("Authorization", tokenCoach)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(attendanceJson(0, assignedPlayer, "PRESENT", null)))
+                .andExpect(status().isOk());
+        mvc.perform(put(base(a) + "/trainings/" + otherTraining + "/attendance")
+                        .header("Authorization", tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(attendanceJson(0, otherPlayer, "ABSENT", null)))
+                .andExpect(status().isOk());
+        String pendingDate = LocalDate.now().minusDays(2).toString();
+        training(tokenA, a, assigned, coach.getId(), pendingDate, "10:00", "11:00");
+        training(tokenA, a, other, otherCoach.getId(), pendingDate, "12:00", "13:00");
 
         mvc.perform(get(base(a) + "/dashboard").header("Authorization", tokenA))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.academyId").value(a.getId().toString()))
                 .andExpect(jsonPath("$.groupCount").value(2))
                 .andExpect(jsonPath("$.playerCount").value(2))
-                .andExpect(jsonPath("$.activeCoachCount").value(1))
+                .andExpect(jsonPath("$.activeCoachCount").value(2))
                 .andExpect(jsonPath("$.upcomingTrainingCount").value(1))
+                .andExpect(jsonPath("$.attendance.sessionsRecorded").value(2))
+                .andExpect(jsonPath("$.attendance.recordsMarked").value(2))
+                .andExpect(jsonPath("$.attendance.presentCount").value(1))
+                .andExpect(jsonPath("$.attendance.absentCount").value(1))
+                .andExpect(jsonPath("$.attendance.attendanceRate").value(50))
+                .andExpect(jsonPath("$.attendance.pendingSheets").value(2))
                 .andExpect(jsonPath("$.ageDistribution[0].playerCount").value(2))
                 .andExpect(jsonPath("$.upcomingTrainings[0].groupId").value(assigned));
 
@@ -286,7 +314,13 @@ class AcademyRosterTests {
                 .andExpect(jsonPath("$.groupCount").value(1))
                 .andExpect(jsonPath("$.playerCount").value(1))
                 .andExpect(jsonPath("$.activeCoachCount").doesNotExist())
-                .andExpect(jsonPath("$.upcomingTrainingCount").value(1));
+                .andExpect(jsonPath("$.upcomingTrainingCount").value(1))
+                .andExpect(jsonPath("$.attendance.sessionsRecorded").value(1))
+                .andExpect(jsonPath("$.attendance.recordsMarked").value(1))
+                .andExpect(jsonPath("$.attendance.presentCount").value(1))
+                .andExpect(jsonPath("$.attendance.absentCount").value(0))
+                .andExpect(jsonPath("$.attendance.attendanceRate").value(100))
+                .andExpect(jsonPath("$.attendance.pendingSheets").value(1));
         mvc.perform(get(base(b) + "/dashboard").header("Authorization", tokenA))
                 .andExpect(status().isNotFound());
     }

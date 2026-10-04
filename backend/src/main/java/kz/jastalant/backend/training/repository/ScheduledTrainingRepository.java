@@ -1,6 +1,7 @@
 package kz.jastalant.backend.training.repository;
 
 import kz.jastalant.backend.training.entity.ScheduledTraining;
+import kz.jastalant.backend.training.entity.TrainingStatus;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
 
@@ -32,6 +33,30 @@ public interface ScheduledTrainingRepository extends Repository<ScheduledTrainin
             """)
     List<ScheduledTraining> findAssigned(
             UUID academyId, UUID membershipId, LocalDate from, LocalDate to);
+
+    @Query("""
+            select count(training.id) from ScheduledTraining training
+            where training.academyId = :academyId and training.status = :status
+              and training.trainingDate between :from and :to
+              and not exists (select session.id from AttendanceSession session
+                  where session.academyId = :academyId and session.trainingId = training.id)
+            """)
+    long countWithoutAttendance(
+            UUID academyId, TrainingStatus status, LocalDate from, LocalDate to);
+
+    @Query("""
+            select count(training.id) from ScheduledTraining training
+            where training.academyId = :academyId and training.status = :status
+              and training.trainingDate between :from and :to
+              and exists (select assignment.id from GroupCoach assignment
+                  where assignment.academyId = :academyId
+                    and assignment.groupId = training.groupId
+                    and assignment.membership.id = :membershipId)
+              and not exists (select session.id from AttendanceSession session
+                  where session.academyId = :academyId and session.trainingId = training.id)
+            """)
+    long countAssignedWithoutAttendance(
+            UUID academyId, UUID membershipId, TrainingStatus status, LocalDate from, LocalDate to);
 
     boolean existsByAcademyIdAndGroupIdAndTrainingDateAndStartTime(
             UUID academyId, UUID groupId, LocalDate trainingDate, LocalTime startTime);

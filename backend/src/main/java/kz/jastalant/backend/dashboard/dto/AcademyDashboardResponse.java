@@ -15,5 +15,6 @@ public record AcademyDashboardResponse(
         long playerCount,
         Long activeCoachCount,
         long upcomingTrainingCount,
+        AttendanceSummary attendance,
         List<AgeDistributionItem> ageDistribution,
         List<ScheduledTrainingResponse> upcomingTrainings) {}

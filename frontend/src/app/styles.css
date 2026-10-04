@@ -3197,6 +3197,74 @@ footer {
   text-align: center;
 }
 
+.overview-panel--attendance {
+  min-height: 0;
+  grid-column: 1 / -1;
+}
+
+.attendance-summary {
+  display: grid;
+  grid-template-columns: minmax(190px, .7fr) minmax(260px, 1.2fr) minmax(220px, .8fr);
+  gap: 18px;
+}
+
+.attendance-summary > div {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid #e3e8ef;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.attendance-summary__rate {
+  display: grid;
+  align-content: center;
+  gap: 5px;
+}
+
+.attendance-summary__rate strong {
+  color: #315eea;
+  font-size: 38px;
+  line-height: 1;
+}
+
+.attendance-summary__rate span { font-size: 12px; font-weight: 750; }
+.attendance-summary__rate small { color: #7b8798; font-size: 10px; }
+
+.attendance-summary__statuses {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.attendance-summary__statuses > div {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  color: #69768a;
+  font-size: 11px;
+}
+
+.attendance-summary__statuses strong { color: #172235; font-size: 15px; }
+.attendance-dot { width: 8px; height: 8px; border-radius: 50%; background: #38b77a; }
+.attendance-dot--late { background: #f2a93b; }
+.attendance-dot--absent { background: #ee6570; }
+.attendance-dot--excused { background: #8b96a7; }
+
+.attendance-summary__pending {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px 14px;
+  align-content: center;
+}
+
+.attendance-summary__pending > span { color: #69768a; font-size: 11px; }
+.attendance-summary__pending > strong { font-size: 26px; }
+.attendance-summary__pending > p { grid-column: 1 / -1; margin: 0; color: #7b8798; font-size: 10px; }
+.attendance-summary__pending > a { grid-column: 1 / -1; color: #315eea; font-size: 11px; font-weight: 750; text-decoration: none; }
+.attendance-summary__pending--warning { border-color: #f3d39c !important; background: #fffaf0 !important; }
+
 .overview-quick-actions {
   display: flex;
   align-items: center;
@@ -3216,6 +3284,8 @@ footer {
 @media (max-width: 1050px) {
   .overview-metrics { grid-template-columns: 1fr 1fr; }
   .overview-grid { grid-template-columns: 1fr; }
+  .attendance-summary { grid-template-columns: 1fr 1fr; }
+  .attendance-summary__pending { grid-column: 1 / -1; }
 }
 
 @media (max-width: 860px) {
@@ -3234,6 +3304,8 @@ footer {
   .crm-shell .workspace-page { padding: 24px 16px; }
   .overview-heading { align-items: flex-start; flex-direction: column; gap: 10px; }
   .overview-metrics { grid-template-columns: 1fr; }
+  .attendance-summary { grid-template-columns: 1fr; }
+  .attendance-summary__pending { grid-column: auto; }
   .overview-quick-actions { align-items: stretch; flex-direction: column; }
   .overview-quick-actions > div:last-child { flex-direction: column; }
 }

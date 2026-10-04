@@ -20,6 +20,22 @@ public interface AttendanceSessionRepository extends Repository<AttendanceSessio
 
     Optional<AttendanceSession> findByAcademyIdAndTrainingId(UUID academyId, UUID trainingId);
 
+    @Query("""
+            select count(session.id) from AttendanceSession session
+            where session.academyId = :academyId and session.trainingDate between :from and :to
+            """)
+    long countInPeriod(UUID academyId, LocalDate from, LocalDate to);
+
+    @Query("""
+            select count(session.id) from AttendanceSession session
+            where session.academyId = :academyId and session.trainingDate between :from and :to
+              and exists (select assignment.id from GroupCoach assignment
+                  where assignment.academyId = :academyId
+                    and assignment.groupId = session.groupId
+                    and assignment.membership.id = :membershipId)
+            """)
+    long countAssignedInPeriod(UUID academyId, UUID membershipId, LocalDate from, LocalDate to);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             select session from AttendanceSession session

@@ -36,6 +36,18 @@ export type AcademyDashboard = {
   playerCount: number
   activeCoachCount: number | null
   upcomingTrainingCount: number
+  attendance: {
+    periodStart: string
+    periodEnd: string
+    sessionsRecorded: number
+    recordsMarked: number
+    presentCount: number
+    lateCount: number
+    absentCount: number
+    excusedCount: number
+    attendanceRate: number
+    pendingSheets: number
+  }
   ageDistribution: AgeDistributionItem[]
   upcomingTrainings: DashboardTraining[]
 }
