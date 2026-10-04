@@ -2,9 +2,11 @@ import { useMemo, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../../../features/auth/model/useAuth'
 import { AcademyContext, type AcademyContextValue } from './AcademyContext'
+import { useI18n } from '../../../shared/i18n/useI18n'
 
 export function AcademyProvider({ children }: { children: ReactNode }) {
   const { academies, loading, token } = useAuth()
+  const { t } = useI18n()
   const { academyId = '' } = useParams()
 
   const value = useMemo<AcademyContextValue | null>(
@@ -28,17 +30,17 @@ export function AcademyProvider({ children }: { children: ReactNode }) {
   )
 
   if (loading) {
-    return <div className="page-loader">Открываем академию…</div>
+    return <div className="page-loader">{t('academy.access.loading')}</div>
   }
 
   if (!value) {
     return (
       <section className="centered-page">
         <div className="empty-state">
-          <p className="eyebrow">Доступ к CRM</p>
-          <h1>Академия недоступна.</h1>
-          <p>Для этого аккаунта пока нет роли администратора или тренера.</p>
-          <Link className="button button--secondary" to="/dashboard">Вернуться в кабинет</Link>
+          <p className="eyebrow">{t('academy.access.eyebrow')}</p>
+          <h1>{t('academy.access.title')}</h1>
+          <p>{t('academy.access.text')}</p>
+          <Link className="button button--secondary" to="/dashboard">{t('academy.access.back')}</Link>
         </div>
       </section>
     )

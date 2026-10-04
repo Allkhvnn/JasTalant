@@ -15,11 +15,13 @@ import { getAcademyMembers } from '../../entities/membership/api/membershipApi'
 import type { AcademyMember } from '../../entities/membership/model/types'
 import { errorMessage } from '../../shared/api/apiClient'
 import type { PageResponse } from '../../shared/api/types'
+import { useI18n } from '../../shared/i18n/useI18n'
 
 const PAGE_SIZE = 20
 
 export function GroupsPage() {
   const { academy, token, academyPath } = useAcademy()
+  const { t } = useI18n()
   const canManage = academy.roles.includes('ADMIN')
   const [result, setResult] = useState<PageResponse<AcademyGroup> | null>(null)
   const [page, setPage] = useState(0)
@@ -105,10 +107,10 @@ export function GroupsPage() {
     try {
       if (currentEditor === 'new') {
         await createGroup(token, academy.id, payload)
-        setNotice(`Группа «${payload.name}» создана.`)
+        setNotice(t('groups.created', { name: payload.name }))
       } else {
         await updateGroup(token, academy.id, currentEditor, payload)
-        setNotice(`Группа «${payload.name}» обновлена.`)
+        setNotice(t('groups.updated', { name: payload.name }))
       }
       setEditor(null)
       reload()
@@ -121,7 +123,7 @@ export function GroupsPage() {
 
   const handleDelete = async (group: AcademyGroup) => {
     const confirmed = window.confirm(
-      `Удалить группу «${group.name}»? Группу с игроками удалить нельзя.`,
+      t('groups.deleteConfirm', { name: group.name }),
     )
     if (!confirmed) return
 
@@ -130,7 +132,7 @@ export function GroupsPage() {
     setNotice('')
     try {
       await deleteGroup(token, academy.id, group.id)
-      setNotice(`Группа «${group.name}» удалена.`)
+      setNotice(t('groups.deleted', { name: group.name }))
       if (result?.items.length === 1 && page > 0) {
         selectPage(page - 1)
       } else {
@@ -168,11 +170,11 @@ export function GroupsPage() {
       if (assigned) {
         await unassignGroupCoach(token, academy.id, coachEditor.id, coach.userId)
         setAssignedCoaches((current) => current.filter((item) => item.userId !== coach.userId))
-        setNotice(`${coach.fullName} снят с группы «${coachEditor.name}».`)
+        setNotice(t('groups.coachRemoved', { coach: coach.fullName, group: coachEditor.name }))
       } else {
         await assignGroupCoach(token, academy.id, coachEditor.id, coach.userId)
         setAssignedCoaches((current) => [...current, { userId: coach.userId, fullName: coach.fullName }])
-        setNotice(`${coach.fullName} назначен на группу «${coachEditor.name}».`)
+        setNotice(t('groups.coachAssigned', { coach: coach.fullName, group: coachEditor.name }))
       }
     } catch (requestError) {
       setError(errorMessage(requestError))
@@ -187,13 +189,13 @@ export function GroupsPage() {
     <div className="workspace-page">
       <div className="workspace-heading workspace-heading--actions">
         <div>
-          <p className="eyebrow">Структура академии</p>
-          <h1>Группы</h1>
-          <p>Создавайте возрастные группы и готовьте их к назначению тренеров.</p>
+          <p className="eyebrow">{t('groups.eyebrow')}</p>
+          <h1>{t('dashboard.groups')}</h1>
+          <p>{t('groups.intro')}</p>
         </div>
         {canManage && (
           <button className="button" type="button" onClick={() => setEditor('new')}>
-            Добавить группу
+            {t('groups.add')}
           </button>
         )}
       </div>
@@ -202,20 +204,20 @@ export function GroupsPage() {
       {notice && <div className="alert alert--success" role="status">{notice}</div>}
 
       {loading ? (
-        <div className="list-state">Загружаем группы…</div>
+        <div className="list-state">{t('groups.loading')}</div>
       ) : result?.items.length ? (
         <div className="management-list">
           {result.items.map((group) => (
             <article className="management-card" key={group.id}>
               <div className="management-card__mark">{group.ageCategory}</div>
               <div className="management-card__body">
-                <span>Футбольная группа</span>
+                <span>{t('groups.footballGroup')}</span>
                 <h2>{group.name}</h2>
-                <p>Категория: {group.ageCategory}</p>
+                <p>{t('groups.category', { category: group.ageCategory })}</p>
               </div>
               <div className="management-card__actions">
                 <Link className="button button--secondary button--small" to={`${academyPath('attendance')}?groupId=${group.id}`}>
-                  Посещаемость
+                  {t('dashboard.attendance')}
                 </Link>
                 {canManage && (
                   <>
@@ -225,7 +227,7 @@ export function GroupsPage() {
                       disabled={Boolean(actionId)}
                       onClick={() => void openCoachEditor(group)}
                     >
-                      Тренеры
+                      {t('dashboard.coaches')}
                     </button>
                     <button
                       className="button button--secondary button--small"
@@ -233,12 +235,12 @@ export function GroupsPage() {
                       disabled={Boolean(actionId)}
                       onClick={() => setEditor(group)}
                     >
-                      Изменить
+                      {t('common.edit')}
                     </button>
                     <button
                       className="icon-button icon-button--danger"
                       type="button"
-                      aria-label={`Удалить группу ${group.name}`}
+                      aria-label={`${t('common.delete')} ${group.name}`}
                       disabled={Boolean(actionId)}
                       onClick={() => void handleDelete(group)}
                     >
@@ -252,22 +254,22 @@ export function GroupsPage() {
         </div>
       ) : (
         <div className="list-state">
-          <strong>{canManage ? 'Групп пока нет' : 'Нет назначенных групп'}</strong>
+          <strong>{t(canManage ? 'groups.emptyAdmin' : 'groups.emptyCoach')}</strong>
           <span>{canManage
-            ? 'Создайте первую группу, чтобы затем добавить в неё игроков.'
-            : 'Администратор академии должен назначить вас тренером группы.'}</span>
-          {canManage && <button className="button" type="button" onClick={() => setEditor('new')}>Создать группу</button>}
+            ? t('groups.emptyAdminText')
+            : t('groups.emptyCoachText')}</span>
+          {canManage && <button className="button" type="button" onClick={() => setEditor('new')}>{t('groups.create')}</button>}
         </div>
       )}
 
       {totalPages > 1 && (
-        <nav className="pagination" aria-label="Страницы групп">
+        <nav className="pagination" aria-label={t('groups.pages')}>
           <button className="button button--secondary" type="button" disabled={page === 0 || loading} onClick={() => selectPage(page - 1)}>
-            Назад
+            {t('common.back')}
           </button>
-          <span>Страница {page + 1} из {totalPages}</span>
+          <span>{t('common.pageOf', { page: page + 1, total: totalPages })}</span>
           <button className="button button--secondary" type="button" disabled={page + 1 >= totalPages || loading} onClick={() => selectPage(page + 1)}>
-            Далее
+            {t('common.next')}
           </button>
         </nav>
       )}
@@ -283,25 +285,25 @@ export function GroupsPage() {
           <div className="dialog" role="dialog" aria-modal="true" aria-labelledby="group-dialog-title">
             <div className="dialog__heading">
               <div>
-                <p className="eyebrow">{editor === 'new' ? 'Новая группа' : 'Редактирование'}</p>
-                <h2 id="group-dialog-title">{editor === 'new' ? 'Добавить группу' : editor.name}</h2>
+                <p className="eyebrow">{t(editor === 'new' ? 'groups.new' : 'groups.editing')}</p>
+                <h2 id="group-dialog-title">{editor === 'new' ? t('groups.add') : editor.name}</h2>
               </div>
-              <button className="dialog__close" type="button" aria-label="Закрыть" onClick={() => setEditor(null)}>×</button>
+              <button className="dialog__close" type="button" aria-label={t('common.close')} onClick={() => setEditor(null)}>×</button>
             </div>
             <form key={editor === 'new' ? 'new' : editor.id} onSubmit={handleSave}>
               {error && <div className="alert alert--error" role="alert">{error}</div>}
               <label className="field">
-                <span>Название группы</span>
+                <span>{t('groups.name')}</span>
                 <input name="name" defaultValue={editor === 'new' ? '' : editor.name} maxLength={200} required autoFocus />
               </label>
               <label className="field">
-                <span>Возрастная категория</span>
-                <input name="ageCategory" defaultValue={editor === 'new' ? '' : editor.ageCategory} maxLength={30} placeholder="Например, U10" required />
+                <span>{t('groups.ageCategory')}</span>
+                <input name="ageCategory" defaultValue={editor === 'new' ? '' : editor.ageCategory} maxLength={30} placeholder={t('groups.agePlaceholder')} required />
               </label>
               <div className="dialog__actions">
-                <button className="button button--secondary" type="button" onClick={() => setEditor(null)}>Отмена</button>
+                <button className="button button--secondary" type="button" onClick={() => setEditor(null)}>{t('common.cancel')}</button>
                 <button className="button" type="submit" disabled={Boolean(actionId)}>
-                  {actionId ? 'Сохраняем…' : 'Сохранить'}
+                  {t(actionId ? 'common.saving' : 'common.save')}
                 </button>
               </div>
             </form>
@@ -320,16 +322,16 @@ export function GroupsPage() {
           <div className="dialog" role="dialog" aria-modal="true" aria-labelledby="coach-dialog-title">
             <div className="dialog__heading">
               <div>
-                <p className="eyebrow">Состав группы</p>
-                <h2 id="coach-dialog-title">Тренеры · {coachEditor.name}</h2>
+                <p className="eyebrow">{t('groups.roster')}</p>
+                <h2 id="coach-dialog-title">{t('groups.coachesFor', { group: coachEditor.name })}</h2>
               </div>
-              <button className="dialog__close" type="button" aria-label="Закрыть" onClick={() => setCoachEditor(null)}>×</button>
+              <button className="dialog__close" type="button" aria-label={t('common.close')} onClick={() => setCoachEditor(null)}>×</button>
             </div>
 
             {error && <div className="alert alert--error" role="alert">{error}</div>}
             {notice && <div className="alert alert--success" role="status">{notice}</div>}
             {coachesLoading ? (
-              <div className="inline-note">Загружаем назначения…</div>
+              <div className="inline-note">{t('groups.loadingAssignments')}</div>
             ) : coaches.length ? (
               <div className="coach-assignment-list">
                 {coaches.map((coach) => {
@@ -346,21 +348,21 @@ export function GroupsPage() {
                         <strong>{coach.fullName}</strong>
                         <small>{coach.email}</small>
                       </span>
-                      <em>{coachActionId === coach.userId ? 'Сохраняем…' : assigned ? 'Назначен' : 'Не назначен'}</em>
+                      <em>{t(coachActionId === coach.userId ? 'common.saving' : assigned ? 'groups.assigned' : 'groups.notAssigned')}</em>
                     </label>
                   )
                 })}
               </div>
             ) : (
               <div className="list-state list-state--compact">
-                <strong>Нет доступных тренеров</strong>
-                <span>Сначала пригласите тренера и дождитесь принятия приглашения.</span>
-                <Link className="button" to={academyPath('invitations')} onClick={() => setCoachEditor(null)}>Перейти к приглашениям</Link>
+                <strong>{t('groups.noCoaches')}</strong>
+                <span>{t('groups.noCoachesText')}</span>
+                <Link className="button" to={academyPath('invitations')} onClick={() => setCoachEditor(null)}>{t('groups.goInvitations')}</Link>
               </div>
             )}
 
             <div className="dialog__actions">
-              <button className="button button--secondary" type="button" disabled={Boolean(coachActionId)} onClick={() => setCoachEditor(null)}>Готово</button>
+              <button className="button button--secondary" type="button" disabled={Boolean(coachActionId)} onClick={() => setCoachEditor(null)}>{t('common.done')}</button>
             </div>
           </div>
         </div>
