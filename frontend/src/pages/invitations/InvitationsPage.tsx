@@ -10,12 +10,9 @@ import { getPlayers } from '../../entities/player/api/playerApi'
 import type { Player } from '../../entities/player/model/types'
 import { errorMessage } from '../../shared/api/apiClient'
 import type { PageResponse } from '../../shared/api/types'
+import { useI18n } from '../../shared/i18n/useI18n'
 
 const PAGE_SIZE = 20
-const roleLabels: Record<InvitableRole, string> = {
-  COACH: 'Тренер',
-  PARENT: 'Родитель',
-}
 
 async function getAllPlayers(token: string, academyId: string) {
   const firstPage = await getPlayers(token, academyId, 0, 100)
@@ -27,8 +24,8 @@ async function getAllPlayers(token: string, academyId: string) {
   return [firstPage, ...rest].flatMap((page) => page.items)
 }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat('ru-RU', {
+function formatDate(value: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(new Date(value))
@@ -36,18 +33,20 @@ function formatDate(value: string) {
 
 function invitationState(invitation: Invitation) {
   if (invitation.status === 'PENDING' && invitation.expired) {
-    return { label: 'Истекло', className: 'expired' }
+    return { label: 'invitations.expired', className: 'expired' }
   }
   const states = {
-    PENDING: { label: 'Ожидает', className: 'pending' },
-    ACCEPTED: { label: 'Принято', className: 'accepted' },
-    REVOKED: { label: 'Отозвано', className: 'revoked' },
+    PENDING: { label: 'invitations.pending', className: 'pending' },
+    ACCEPTED: { label: 'invitations.accepted', className: 'accepted' },
+    REVOKED: { label: 'invitations.revoked', className: 'revoked' },
   }
   return states[invitation.status]
 }
 
 export function InvitationsPage() {
   const { academy, token } = useAcademy()
+  const { t, intlLocale } = useI18n()
+  const roleLabels: Record<InvitableRole, string> = { COACH: t('dashboard.coach'), PARENT: t('dashboard.parent') }
   const [result, setResult] = useState<PageResponse<Invitation> | null>(null)
   const [players, setPlayers] = useState<Player[]>([])
   const [page, setPage] = useState(0)
@@ -127,11 +126,11 @@ export function InvitationsPage() {
     event.preventDefault()
     const data = new FormData(event.currentTarget)
     if (!roles.length) {
-      setError('Выберите хотя бы одну роль.')
+      setError(t('invitations.roleRequired'))
       return
     }
     if (roles.includes('PARENT') && !playerIds.length) {
-      setError('Выберите ребёнка для родителя.')
+      setError(t('invitations.childRequired'))
       return
     }
     setActionId('new')
@@ -144,7 +143,7 @@ export function InvitationsPage() {
         playerIds: roles.includes('PARENT') ? playerIds : [],
       })
       setDialogOpen(false)
-      setNotice('Приглашение отправлено. Локально письмо можно открыть в Mailpit.')
+      setNotice(t('invitations.sent'))
       reload()
     } catch (requestError) {
       setError(errorMessage(requestError))
@@ -154,13 +153,13 @@ export function InvitationsPage() {
   }
 
   const handleRevoke = async (invitation: Invitation) => {
-    if (!window.confirm(`Отозвать приглашение для ${invitation.email}?`)) return
+    if (!window.confirm(t('invitations.revokeConfirm', { email: invitation.email }))) return
     setActionId(invitation.id)
     setError('')
     setNotice('')
     try {
       await revokeInvitation(token, academy.id, invitation.id)
-      setNotice(`Приглашение для ${invitation.email} отозвано.`)
+      setNotice(t('invitations.revokedNotice', { email: invitation.email }))
       reload()
     } catch (requestError) {
       setError(errorMessage(requestError))
@@ -175,18 +174,18 @@ export function InvitationsPage() {
     <div className="workspace-page">
       <div className="workspace-heading workspace-heading--actions">
         <div>
-          <p className="eyebrow">Доступ к академии</p>
-          <h1>Приглашения</h1>
-          <p>Приглашайте тренеров и родителей. Родителя можно сразу связать с одним или несколькими игроками.</p>
+          <p className="eyebrow">{t('members.access')}</p>
+          <h1>{t('academy.nav.invitations')}</h1>
+          <p>{t('invitations.intro')}</p>
         </div>
-        <button className="button" type="button" onClick={openDialog}>Новое приглашение</button>
+        <button className="button" type="button" onClick={openDialog}>{t('invitations.new')}</button>
       </div>
 
       {error && <div className="alert alert--error" role="alert">{error}</div>}
       {notice && <div className="alert alert--success" role="status">{notice}</div>}
 
       {loading ? (
-        <div className="list-state">Загружаем приглашения…</div>
+        <div className="list-state">{t('invitations.loading')}</div>
       ) : result?.items.length ? (
         <div className="management-list">
           {result.items.map((invitation) => {
@@ -199,13 +198,13 @@ export function InvitationsPage() {
                 <div className="management-card__mark" aria-hidden="true">@</div>
                 <div className="management-card__body">
                   <div className="invitation-card__heading">
-                    <span className={`status-pill status-pill--${state.className}`}>{state.label}</span>
+                    <span className={`status-pill status-pill--${state.className}`}>{t(state.label)}</span>
                     <span>{invitation.roles.map((role) => roleLabels[role]).join(' · ')}</span>
                   </div>
                   <h2>{invitation.email}</h2>
                   <p>
-                    {invitedPlayers.length ? `Игроки: ${invitedPlayers.join(', ')} · ` : ''}
-                    Действует до {formatDate(invitation.expiresAt)}
+                    {invitedPlayers.length ? t('invitations.players', { names: invitedPlayers.join(', ') }) : ''}
+                    {t('invitations.validUntil', { date: formatDate(invitation.expiresAt, intlLocale) })}
                   </p>
                 </div>
                 <div className="management-card__actions">
@@ -216,7 +215,7 @@ export function InvitationsPage() {
                       disabled={Boolean(actionId)}
                       onClick={() => void handleRevoke(invitation)}
                     >
-                      Отозвать
+                      {t('invitations.revoke')}
                     </button>
                   )}
                 </div>
@@ -226,17 +225,17 @@ export function InvitationsPage() {
         </div>
       ) : (
         <div className="list-state">
-          <strong>Приглашений пока нет</strong>
-          <span>Отправьте первое приглашение тренеру или родителю.</span>
-          <button className="button" type="button" onClick={openDialog}>Пригласить</button>
+          <strong>{t('invitations.empty')}</strong>
+          <span>{t('invitations.emptyText')}</span>
+          <button className="button" type="button" onClick={openDialog}>{t('invitations.invite')}</button>
         </div>
       )}
 
       {totalPages > 1 && (
-        <nav className="pagination" aria-label="Страницы приглашений">
-          <button className="button button--secondary" type="button" disabled={page === 0 || loading} onClick={() => setPage(page - 1)}>Назад</button>
-          <span>Страница {page + 1} из {totalPages}</span>
-          <button className="button button--secondary" type="button" disabled={page + 1 >= totalPages || loading} onClick={() => setPage(page + 1)}>Далее</button>
+        <nav className="pagination" aria-label={t('invitations.pages')}>
+          <button className="button button--secondary" type="button" disabled={page === 0 || loading} onClick={() => setPage(page - 1)}>{t('common.back')}</button>
+          <span>{t('common.pageOf', { page: page + 1, total: totalPages })}</span>
+          <button className="button button--secondary" type="button" disabled={page + 1 >= totalPages || loading} onClick={() => setPage(page + 1)}>{t('common.next')}</button>
         </nav>
       )}
 
@@ -251,26 +250,26 @@ export function InvitationsPage() {
           <div className="dialog dialog--wide" role="dialog" aria-modal="true" aria-labelledby="invitation-dialog-title">
             <div className="dialog__heading">
               <div>
-                <p className="eyebrow">Новый участник</p>
-                <h2 id="invitation-dialog-title">Отправить приглашение</h2>
+                <p className="eyebrow">{t('invitations.newMember')}</p>
+                <h2 id="invitation-dialog-title">{t('invitations.sendTitle')}</h2>
               </div>
-              <button className="dialog__close" type="button" aria-label="Закрыть" onClick={() => setDialogOpen(false)}>×</button>
+              <button className="dialog__close" type="button" aria-label={t('common.close')} onClick={() => setDialogOpen(false)}>×</button>
             </div>
             <form onSubmit={handleCreate}>
               {error && <div className="alert alert--error" role="alert">{error}</div>}
               <label className="field">
-                <span>Email получателя</span>
+                <span>{t('invitations.email')}</span>
                 <input name="email" type="email" autoComplete="email" maxLength={254} required autoFocus />
               </label>
 
-              <div className="form-divider"><span>Роли</span></div>
+              <div className="form-divider"><span>{t('members.roles')}</span></div>
               <div className="choice-grid">
                 {(['COACH', 'PARENT'] as const).map((role) => (
                   <label className={roles.includes(role) ? 'choice-card choice-card--selected' : 'choice-card'} key={role}>
                     <input type="checkbox" checked={roles.includes(role)} onChange={() => toggleRole(role)} />
                     <span>
                       <strong>{roleLabels[role]}</strong>
-                      <small>{role === 'COACH' ? 'Отмечает посещаемость своих групп' : 'Просматривает данные своего ребёнка'}</small>
+                      <small>{t(role === 'COACH' ? 'invitations.coachScope' : 'invitations.parentScope')}</small>
                     </span>
                   </label>
                 ))}
@@ -278,7 +277,7 @@ export function InvitationsPage() {
 
               {roles.includes('PARENT') && (
                 <>
-                  <div className="form-divider"><span>Дети родителя</span></div>
+                  <div className="form-divider"><span>{t('invitations.children')}</span></div>
                   {players.length ? (
                     <div className="player-choice-list">
                       {players.map((player) => (
@@ -289,15 +288,15 @@ export function InvitationsPage() {
                       ))}
                     </div>
                   ) : (
-                    <div className="inline-note">Сначала добавьте игрока, чтобы пригласить родителя.</div>
+                    <div className="inline-note">{t('invitations.addPlayerFirst')}</div>
                   )}
                 </>
               )}
 
               <div className="dialog__actions">
-                <button className="button button--secondary" type="button" onClick={() => setDialogOpen(false)}>Отмена</button>
+                <button className="button button--secondary" type="button" onClick={() => setDialogOpen(false)}>{t('common.cancel')}</button>
                 <button className="button" type="submit" disabled={Boolean(actionId)}>
-                  {actionId ? 'Отправляем…' : 'Отправить'}
+                  {t(actionId ? 'invitations.sending' : 'invitations.send')}
                 </button>
               </div>
             </form>
