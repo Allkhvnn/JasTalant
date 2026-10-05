@@ -14,16 +14,9 @@ import { useAcademy } from '../../entities/academy/model/useAcademy'
 import { getPlayers } from '../../entities/player/api/playerApi'
 import type { Player } from '../../entities/player/model/types'
 import { errorMessage } from '../../shared/api/apiClient'
+import { useI18n } from '../../shared/i18n/useI18n'
 
 type MetricKey = 'technique' | 'speed' | 'endurance' | 'physicalFitness' | 'gameIntelligence'
-
-const metricLabels: Array<[MetricKey, string]> = [
-  ['technique', 'Техника'],
-  ['speed', 'Скорость'],
-  ['endurance', 'Выносливость'],
-  ['physicalFitness', 'Физическая подготовка'],
-  ['gameIntelligence', 'Игровой интеллект'],
-]
 
 function today() {
   const date = new Date()
@@ -32,10 +25,18 @@ function today() {
   const day = String(date.getDate()).padStart(2, '0')
   return `${year}-${month}-${day}`
 }
-const formatDate = (value: string) => new Intl.DateTimeFormat('ru-RU').format(new Date(`${value}T00:00:00`))
+const formatDate = (value: string, locale: string) => new Intl.DateTimeFormat(locale).format(new Date(`${value}T00:00:00`))
 
 export function DevelopmentPage() {
   const { academy, token } = useAcademy()
+  const { t, intlLocale } = useI18n()
+  const metricLabels: Array<[MetricKey, string]> = [
+    ['technique', t('development.technique')],
+    ['speed', t('development.speed')],
+    ['endurance', t('development.endurance')],
+    ['physicalFitness', t('development.physicalFitness')],
+    ['gameIntelligence', t('development.gameIntelligence')],
+  ]
   const [searchParams, setSearchParams] = useSearchParams()
   const [requestedPlayerId] = useState(() => searchParams.get('playerId') || '')
   const [players, setPlayers] = useState<Player[]>([])
@@ -109,10 +110,10 @@ export function DevelopmentPage() {
     try {
       if (editor === 'new') {
         await createDevelopmentAssessment(token, academy.id, playerId, payload)
-        setNotice('Оценка развития добавлена.')
+        setNotice(t('development.created'))
       } else {
         await updateDevelopmentAssessment(token, academy.id, playerId, editor, payload)
-        setNotice('Оценка развития обновлена.')
+        setNotice(t('development.updated'))
       }
       setEditor(null)
       setLoading(true)
@@ -125,12 +126,12 @@ export function DevelopmentPage() {
   }
 
   const handleDelete = async (assessment: DevelopmentAssessment) => {
-    if (!window.confirm(`Удалить оценку за ${formatDate(assessment.assessmentDate)}?`)) return
+    if (!window.confirm(t('development.deleteConfirm', { date: formatDate(assessment.assessmentDate, intlLocale) }))) return
     setSaving(true)
     setError('')
     try {
       await deleteDevelopmentAssessment(token, academy.id, playerId, assessment.id)
-      setNotice('Оценка удалена.')
+      setNotice(t('development.deleted'))
       setLoading(true)
       setReloadKey((value) => value + 1)
     } catch (requestError) {
@@ -144,12 +145,12 @@ export function DevelopmentPage() {
     <div className="workspace-page">
       <div className="workspace-heading workspace-heading--actions">
         <div>
-          <p className="eyebrow">Развитие игроков</p>
-          <h1>Показатели</h1>
-          <p>Фиксируйте оценки по пяти направлениям и отслеживайте прогресс.</p>
+          <p className="eyebrow">{t('dashboard.development')}</p>
+          <h1>{t('development.metrics')}</h1>
+          <p>{t('development.intro')}</p>
         </div>
         <button className="button" type="button" disabled={!playerId || saving} onClick={() => setEditor('new')}>
-          Добавить оценку
+          {t('development.add')}
         </button>
       </div>
 
@@ -158,40 +159,40 @@ export function DevelopmentPage() {
 
       <div className="list-toolbar">
         <label>
-          <span>Игрок</span>
+          <span>{t('development.player')}</span>
           <select value={playerId} onChange={(event) => selectPlayer(event.target.value)}>
-            {!players.length && <option value="">Нет доступных игроков</option>}
+            {!players.length && <option value="">{t('development.noPlayers')}</option>}
             {players.map((player) => <option key={player.id} value={player.id}>{player.fullName}</option>)}
           </select>
         </label>
-        <span>{assessments.length} оценок</span>
+        <span>{t('development.count', { count: assessments.length })}</span>
       </div>
 
       {latest && (
         <>
           <div className="development-summary">
             {metricLabels.map(([key, label]) => (
-              <div key={key}><span>{label}</span><strong>{Number(latest[key]).toFixed(1)}</strong><small>из 10</small></div>
+              <div key={key}><span>{label}</span><strong>{Number(latest[key]).toFixed(1)}</strong><small>{t('development.outOf10')}</small></div>
             ))}
-            <div className="development-summary__average"><span>Средняя оценка</span><strong>{average?.toFixed(1)}</strong><small>из 10</small></div>
+            <div className="development-summary__average"><span>{t('development.average')}</span><strong>{average?.toFixed(1)}</strong><small>{t('development.outOf10')}</small></div>
           </div>
-          <p className="development-caption">Последняя оценка: {formatDate(latest.assessmentDate)}</p>
+          <p className="development-caption">{t('development.latest', { date: formatDate(latest.assessmentDate, intlLocale) })}</p>
         </>
       )}
 
       {loading ? (
-        <div className="list-state">Загружаем показатели…</div>
+        <div className="list-state">{t('development.loading')}</div>
       ) : !selectedPlayer ? (
-        <div className="list-state"><strong>Нет доступных игроков</strong><span>Добавьте игрока или назначьте тренеру группу.</span></div>
+        <div className="list-state"><strong>{t('development.noPlayers')}</strong><span>{t('development.noPlayersText')}</span></div>
       ) : assessments.length ? (
         <div className="development-history">
           {assessments.map((assessment) => (
             <article className="development-record" key={assessment.id}>
               <div className="development-record__heading">
-                <div><time>{formatDate(assessment.assessmentDate)}</time><span>Оценил: {assessment.createdByName}</span></div>
+                <div><time>{formatDate(assessment.assessmentDate, intlLocale)}</time><span>{t('development.assessedBy', { name: assessment.createdByName })}</span></div>
                 <div>
-                  <button className="button button--secondary button--small" type="button" disabled={saving} onClick={() => setEditor(assessment)}>Изменить</button>
-                  <button className="text-button text-button--danger" type="button" disabled={saving} onClick={() => void handleDelete(assessment)}>Удалить</button>
+                  <button className="button button--secondary button--small" type="button" disabled={saving} onClick={() => setEditor(assessment)}>{t('common.edit')}</button>
+                  <button className="text-button text-button--danger" type="button" disabled={saving} onClick={() => void handleDelete(assessment)}>{t('common.delete')}</button>
                 </div>
               </div>
               <div className="development-record__metrics">
@@ -202,7 +203,7 @@ export function DevelopmentPage() {
           ))}
         </div>
       ) : (
-        <div className="list-state"><strong>Оценок пока нет</strong><span>Добавьте первую оценку развития для {selectedPlayer.fullName}.</span></div>
+        <div className="list-state"><strong>{t('development.empty')}</strong><span>{t('development.emptyText', { name: selectedPlayer.fullName })}</span></div>
       )}
 
       {editor && (
@@ -211,18 +212,18 @@ export function DevelopmentPage() {
         }}>
           <div className="dialog dialog--wide" role="dialog" aria-modal="true" aria-labelledby="development-dialog-title">
             <div className="dialog__heading">
-              <div><p className="eyebrow">{selectedPlayer?.fullName}</p><h2 id="development-dialog-title">{editor === 'new' ? 'Новая оценка' : 'Изменить оценку'}</h2></div>
-              <button className="dialog__close" type="button" aria-label="Закрыть" onClick={() => setEditor(null)}>×</button>
+              <div><p className="eyebrow">{selectedPlayer?.fullName}</p><h2 id="development-dialog-title">{t(editor === 'new' ? 'development.new' : 'development.edit')}</h2></div>
+              <button className="dialog__close" type="button" aria-label={t('common.close')} onClick={() => setEditor(null)}>×</button>
             </div>
             <form key={editor === 'new' ? 'new' : editor.id} onSubmit={handleSave}>
-              <label className="field"><span>Дата оценки</span><input name="assessmentDate" type="date" max={today()} defaultValue={editor === 'new' ? today() : editor.assessmentDate} required /></label>
+              <label className="field"><span>{t('development.date')}</span><input name="assessmentDate" type="date" max={today()} defaultValue={editor === 'new' ? today() : editor.assessmentDate} required /></label>
               <div className="development-fields">
                 {metricLabels.map(([key, label]) => (
                   <label className="field" key={key}><span>{label}</span><input name={key} type="number" min="0" max="10" step="0.1" defaultValue={editor === 'new' ? 5 : editor[key]} required /></label>
                 ))}
               </div>
-              <label className="field"><span>Комментарий тренера</span><textarea name="comment" maxLength={500} rows={4} defaultValue={editor === 'new' ? '' : editor.comment || ''} /></label>
-              <div className="dialog__actions"><button className="button button--secondary" type="button" onClick={() => setEditor(null)}>Отмена</button><button className="button" type="submit" disabled={saving}>{saving ? 'Сохраняем…' : 'Сохранить'}</button></div>
+              <label className="field"><span>{t('development.comment')}</span><textarea name="comment" maxLength={500} rows={4} defaultValue={editor === 'new' ? '' : editor.comment || ''} /></label>
+              <div className="dialog__actions"><button className="button button--secondary" type="button" onClick={() => setEditor(null)}>{t('common.cancel')}</button><button className="button" type="submit" disabled={saving}>{t(saving ? 'common.saving' : 'common.save')}</button></div>
             </form>
           </div>
         </div>

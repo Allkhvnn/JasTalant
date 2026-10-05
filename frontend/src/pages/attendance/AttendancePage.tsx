@@ -14,13 +14,7 @@ import { useAcademy } from '../../entities/academy/model/useAcademy'
 import { getGroups } from '../../entities/group/api/groupApi'
 import type { AcademyGroup } from '../../entities/group/model/types'
 import { errorMessage } from '../../shared/api/apiClient'
-
-const statusOptions: Array<{ value: AttendanceStatus; label: string }> = [
-  { value: 'PRESENT', label: 'Присутствовал' },
-  { value: 'ABSENT', label: 'Отсутствовал' },
-  { value: 'LATE', label: 'Опоздал' },
-  { value: 'EXCUSED', label: 'Уважительная' },
-]
+import { useI18n } from '../../shared/i18n/useI18n'
 
 type DraftMark = {
   status: AttendanceStatus
@@ -57,6 +51,13 @@ function marksFromSheet(sheet: AttendanceSheet) {
 
 export function AttendancePage() {
   const { academy, token, academyPath } = useAcademy()
+  const { t } = useI18n()
+  const statusOptions = useMemo<Array<{ value: AttendanceStatus; label: string }>>(() => [
+    { value: 'PRESENT', label: t('attendance.present') },
+    { value: 'ABSENT', label: t('attendance.absent') },
+    { value: 'LATE', label: t('attendance.late') },
+    { value: 'EXCUSED', label: t('attendance.excused') },
+  ], [t])
   const [searchParams, setSearchParams] = useSearchParams()
   const [requestedGroupId] = useState(() => searchParams.get('groupId') || '')
   const [requestedTrainingId] = useState(() => searchParams.get('trainingId') || '')
@@ -127,7 +128,7 @@ export function AttendancePage() {
       ...option,
       count: values.filter((mark) => mark.status === option.value).length,
     }))
-  }, [marks])
+  }, [marks, statusOptions])
 
   const selectGroup = (nextGroupId: string) => {
     setSheetLoading(true)
@@ -185,7 +186,7 @@ export function AttendancePage() {
         : await saveAttendance(token, academy.id, groupId, trainingDate, payload)
       setSheet(result)
       setMarks(marksFromSheet(result))
-      setNotice('Посещаемость сохранена.')
+      setNotice(t('attendance.saved'))
     } catch (requestError) {
       setError(errorMessage(requestError))
     } finally {
@@ -197,13 +198,13 @@ export function AttendancePage() {
     <div className="workspace-page attendance-page">
       <div className="workspace-heading workspace-heading--actions">
         <div>
-          <p className="eyebrow">Тренировочный процесс</p>
-          <h1>Посещаемость</h1>
-          <p>{trainingId ? 'Ведомость открыта из расписания конкретной тренировки.' : 'Выберите группу и дату, затем отметьте каждого игрока.'}</p>
+          <p className="eyebrow">{t('schedule.eyebrow')}</p>
+          <h1>{t('dashboard.attendance')}</h1>
+          <p>{t(trainingId ? 'attendance.fromSchedule' : 'attendance.intro')}</p>
         </div>
         {sheet?.players.length ? (
           <button className="button" type="button" disabled={saving || sheetLoading} onClick={() => void handleSave()}>
-            {saving ? 'Сохраняем…' : 'Сохранить ведомость'}
+            {t(saving ? 'common.saving' : 'attendance.saveSheet')}
           </button>
         ) : null}
       </div>
@@ -213,38 +214,38 @@ export function AttendancePage() {
 
       <div className="attendance-toolbar">
         <label>
-          <span>Группа</span>
+          <span>{t('common.group')}</span>
           <select value={groupId} disabled={Boolean(trainingId) || groupsLoading || !groups.length} onChange={(event) => selectGroup(event.target.value)}>
             {groups.map((group) => <option key={group.id} value={group.id}>{group.name} · {group.ageCategory}</option>)}
           </select>
         </label>
         <label>
-          <span>Дата тренировки</span>
+          <span>{t('attendance.trainingDate')}</span>
           <input type="date" value={trainingDate} max={localDate()} disabled={Boolean(trainingId)} onChange={(event) => selectDate(event.target.value)} />
         </label>
         <div className={sheet?.saved ? 'sheet-state sheet-state--saved' : 'sheet-state'}>
-          {sheet?.saved ? `Сохранено · версия ${sheet.version}` : 'Новая ведомость'}
+          {sheet?.saved ? t('attendance.savedVersion', { version: sheet.version }) : t('attendance.newSheet')}
         </div>
-        {trainingId && <Link className="text-button" to={academyPath('schedule')}>Вернуться в расписание</Link>}
+        {trainingId && <Link className="text-button" to={academyPath('schedule')}>{t('attendance.backSchedule')}</Link>}
       </div>
 
       {groupsLoading ? (
-        <div className="list-state">Загружаем группы…</div>
+        <div className="list-state">{t('groups.loading')}</div>
       ) : !groups.length ? (
         <div className="list-state">
-          <strong>{academy.roles.includes('ADMIN') ? 'Сначала создайте группу' : 'Нет назначенных групп'}</strong>
+          <strong>{t(academy.roles.includes('ADMIN') ? 'schedule.createGroupFirst' : 'schedule.noAssignedGroups')}</strong>
           <span>{academy.roles.includes('ADMIN')
-            ? 'Для посещаемости нужна группа с игроками.'
-            : 'Попросите администратора назначить вас тренером группы.'}</span>
-          {academy.roles.includes('ADMIN') && <Link className="button" to={academyPath('groups')}>Перейти к группам</Link>}
+            ? t('attendance.needGroup')
+            : t('attendance.askAssignment')}</span>
+          {academy.roles.includes('ADMIN') && <Link className="button" to={academyPath('groups')}>{t('attendance.goGroups')}</Link>}
         </div>
       ) : sheetLoading ? (
-        <div className="list-state">Открываем ведомость…</div>
+        <div className="list-state">{t('attendance.opening')}</div>
       ) : sheet && !sheet.players.length ? (
         <div className="list-state">
-          <strong>В группе нет игроков</strong>
-          <span>Добавьте игроков, прежде чем отмечать посещаемость.</span>
-          {academy.roles.includes('ADMIN') && <Link className="button" to={academyPath('players')}>Добавить игроков</Link>}
+          <strong>{t('attendance.noPlayers')}</strong>
+          <span>{t('attendance.noPlayersText')}</span>
+          {academy.roles.includes('ADMIN') && <Link className="button" to={academyPath('players')}>{t('overview.addPlayer')}</Link>}
         </div>
       ) : sheet ? (
         <>
@@ -264,7 +265,7 @@ export function AttendancePage() {
                   <span>{String(index + 1).padStart(2, '0')}</span>
                   <strong>{player.fullName}</strong>
                 </div>
-                <div className="attendance-statuses" role="group" aria-label={`Статус: ${player.fullName}`}>
+                <div className="attendance-statuses" role="group" aria-label={t('attendance.statusFor', { name: player.fullName })}>
                   {statusOptions.map((option) => (
                     <button
                       className={marks[player.playerId]?.status === option.value
@@ -283,17 +284,17 @@ export function AttendancePage() {
                   value={marks[player.playerId]?.comment || ''}
                   onChange={(event) => updateComment(player.playerId, event.target.value)}
                   maxLength={300}
-                  placeholder="Комментарий"
-                  aria-label={`Комментарий: ${player.fullName}`}
+                  placeholder={t('attendance.comment')}
+                  aria-label={t('attendance.commentFor', { name: player.fullName })}
                 />
               </article>
             ))}
           </div>
 
           <div className="attendance-savebar">
-            <span>{sheet.players.length} игроков в ведомости</span>
+            <span>{t('attendance.playersInSheet', { count: sheet.players.length })}</span>
             <button className="button" type="button" disabled={saving} onClick={() => void handleSave()}>
-              {saving ? 'Сохраняем…' : 'Сохранить посещаемость'}
+              {t(saving ? 'common.saving' : 'attendance.save')}
             </button>
           </div>
         </>
