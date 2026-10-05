@@ -197,6 +197,15 @@ const ru = {
   'players.import.birthInvalid': 'Дата рождения должна быть в прошлом.',
   'players.import.parentNameInvalid': 'Имя родителя не должно превышать 200 символов.',
   'players.import.phoneInvalid': 'Неверный формат телефона родителя.', 'players.import.emailInvalid': 'Неверный email родителя.',
+  'profile.updated': 'Профиль игрока обновлён.', 'profile.photoRemoved': 'Фотография удалена.',
+  'profile.loading': 'Загружаем профиль игрока…', 'profile.notFound': 'Игрок не найден.',
+  'profile.back': 'Вернуться к игрокам', 'profile.allPlayers': 'Все игроки', 'profile.title': 'Профиль игрока',
+  'profile.groupMissing': 'Группа не указана', 'profile.age': '{count} лет', 'profile.edit': 'Редактировать',
+  'profile.openMetrics': 'Открыть показатели', 'profile.card': 'Карточка игрока', 'profile.details': 'Основные данные',
+  'profile.parentEmail': 'Email родителя', 'profile.latestAssessment': 'Последняя оценка',
+  'profile.development': 'Развитие игрока', 'profile.assessmentFrom': 'Оценка от {date} · {name}',
+  'profile.noAssessments': 'Для игрока ещё нет оценок развития.', 'profile.addAssessment': 'Добавить первую оценку',
+  'profile.editTitle': 'Редактировать профиль', 'profile.newPhoto': 'Новая фотография',
 } as const
 
 type MessageKey = keyof typeof ru
@@ -399,6 +408,15 @@ const kk: Messages = {
   'players.import.birthInvalid': 'Туған күні өткен уақытта болуы керек.',
   'players.import.parentNameInvalid': 'Ата-ананың аты 200 таңбадан аспауы керек.',
   'players.import.phoneInvalid': 'Ата-ана телефонының пішімі қате.', 'players.import.emailInvalid': 'Ата-ана email-ының пішімі қате.',
+  'profile.updated': 'Ойыншы профилі жаңартылды.', 'profile.photoRemoved': 'Фотосурет жойылды.',
+  'profile.loading': 'Ойыншы профилі жүктелуде…', 'profile.notFound': 'Ойыншы табылмады.',
+  'profile.back': 'Ойыншыларға оралу', 'profile.allPlayers': 'Барлық ойыншылар', 'profile.title': 'Ойыншы профилі',
+  'profile.groupMissing': 'Топ көрсетілмеген', 'profile.age': '{count} жаста', 'profile.edit': 'Өңдеу',
+  'profile.openMetrics': 'Көрсеткіштерді ашу', 'profile.card': 'Ойыншы карточкасы', 'profile.details': 'Негізгі деректер',
+  'profile.parentEmail': 'Ата-ананың email-ы', 'profile.latestAssessment': 'Соңғы баға',
+  'profile.development': 'Ойыншының дамуы', 'profile.assessmentFrom': '{date} күнгі баға · {name}',
+  'profile.noAssessments': 'Ойыншының даму бағалары әлі жоқ.', 'profile.addAssessment': 'Алғашқы бағаны қосу',
+  'profile.editTitle': 'Профильді өңдеу', 'profile.newPhoto': 'Жаңа фотосурет',
 }
 
 const en: Messages = {
@@ -598,6 +616,15 @@ const en: Messages = {
   'players.import.birthInvalid': 'The date of birth must be in the past.',
   'players.import.parentNameInvalid': 'The parent name must not exceed 200 characters.',
   'players.import.phoneInvalid': 'The parent phone format is invalid.', 'players.import.emailInvalid': 'The parent email format is invalid.',
+  'profile.updated': 'Player profile updated.', 'profile.photoRemoved': 'Photo removed.',
+  'profile.loading': 'Loading player profile…', 'profile.notFound': 'Player not found.',
+  'profile.back': 'Return to players', 'profile.allPlayers': 'All players', 'profile.title': 'Player profile',
+  'profile.groupMissing': 'Group not specified', 'profile.age': '{count} years old', 'profile.edit': 'Edit',
+  'profile.openMetrics': 'Open metrics', 'profile.card': 'Player card', 'profile.details': 'Basic details',
+  'profile.parentEmail': 'Parent email', 'profile.latestAssessment': 'Latest assessment',
+  'profile.development': 'Player development', 'profile.assessmentFrom': 'Assessment from {date} · {name}',
+  'profile.noAssessments': 'This player has no development assessments yet.', 'profile.addAssessment': 'Add first assessment',
+  'profile.editTitle': 'Edit profile', 'profile.newPhoto': 'New photo',
 }
 
 export const messages: Record<Locale, Messages> = { kk, ru, en }
