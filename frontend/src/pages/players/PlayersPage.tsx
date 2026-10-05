@@ -16,6 +16,7 @@ import {
 import type { Player, PlayerImportResult, PlayerPayload } from '../../entities/player/model/types'
 import { errorMessage } from '../../shared/api/apiClient'
 import type { PageResponse } from '../../shared/api/types'
+import { useI18n } from '../../shared/i18n/useI18n'
 import { ProtectedAvatar } from '../../shared/ui/ProtectedAvatar'
 
 const PAGE_SIZE = 20
@@ -35,25 +36,26 @@ function latestBirthDate() {
 }
 
 const importMessages: Record<string, string> = {
-  'Group is required': 'Укажите группу.',
-  'Group does not belong to this academy': 'Группа не принадлежит этой академии.',
-  'Group was not found in this academy': 'Группа с таким названием не найдена.',
-  'Group name is ambiguous; use its UUID': 'Найдено несколько групп с таким названием — укажите UUID.',
-  'Use date format YYYY-MM-DD': 'Используйте формат даты ГГГГ-ММ-ДД.',
-  'Full name is required and must not exceed 200 characters': 'Укажите ФИО длиной до 200 символов.',
-  'Date of birth must be in the past': 'Дата рождения должна быть в прошлом.',
-  'Parent name must not exceed 200 characters': 'Имя родителя не должно превышать 200 символов.',
-  'Parent phone format is invalid': 'Неверный формат телефона родителя.',
-  'Parent email format is invalid': 'Неверный email родителя.',
+  'Group is required': 'players.import.groupRequired',
+  'Group does not belong to this academy': 'players.import.groupAcademy',
+  'Group was not found in this academy': 'players.import.groupMissing',
+  'Group name is ambiguous; use its UUID': 'players.import.groupAmbiguous',
+  'Use date format YYYY-MM-DD': 'players.import.dateFormat',
+  'Full name is required and must not exceed 200 characters': 'players.import.nameInvalid',
+  'Date of birth must be in the past': 'players.import.birthInvalid',
+  'Parent name must not exceed 200 characters': 'players.import.parentNameInvalid',
+  'Parent phone format is invalid': 'players.import.phoneInvalid',
+  'Parent email format is invalid': 'players.import.emailInvalid',
 }
 
 const importFields: Record<string, string> = {
-  group: 'группа', full_name: 'ФИО', date_of_birth: 'дата рождения',
-  parent_name: 'имя родителя', parent_phone: 'телефон', parent_email: 'email',
+  group: 'players.group', full_name: 'players.fullName', date_of_birth: 'players.birthDate',
+  parent_name: 'players.parentName', parent_phone: 'players.phone', parent_email: 'players.email',
 }
 
 export function PlayersPage() {
   const { academy, token, academyPath } = useAcademy()
+  const { t, intlLocale } = useI18n()
   const canManage = academy.roles.includes('ADMIN')
   const [groups, setGroups] = useState<AcademyGroup[]>([])
   const [result, setResult] = useState<PageResponse<Player> | null>(null)
@@ -155,10 +157,10 @@ export function PlayersPage() {
     try {
       if (currentEditor === 'new') {
         await createPlayer(token, academy.id, payload)
-        setNotice(`Игрок «${payload.fullName}» добавлен.`)
+        setNotice(t('players.created', { name: payload.fullName }))
       } else {
         await updatePlayer(token, academy.id, currentEditor, payload)
-        setNotice(`Данные игрока «${payload.fullName}» обновлены.`)
+        setNotice(t('players.updated', { name: payload.fullName }))
       }
       setEditor(null)
       reload()
@@ -170,13 +172,13 @@ export function PlayersPage() {
   }
 
   const handleDelete = async (player: Player) => {
-    if (!window.confirm(`Удалить игрока «${player.fullName}»?`)) return
+    if (!window.confirm(t('players.deleteConfirm', { name: player.fullName }))) return
     setActionId(player.id)
     setError('')
     setNotice('')
     try {
       await deletePlayer(token, academy.id, player.id)
-      setNotice(`Игрок «${player.fullName}» удалён.`)
+      setNotice(t('players.deleted', { name: player.fullName }))
       if (result?.items.length === 1 && page > 0) {
         selectPage(page - 1)
       } else {
@@ -236,7 +238,7 @@ export function PlayersPage() {
     setImportError('')
     try {
       const imported = await importPlayers(token, academy.id, importFile)
-      setNotice(`Импортировано игроков: ${imported.importedRows}.`)
+      setNotice(t('players.imported', { count: imported.importedRows }))
       setImportOpen(false)
       setImportFile(null)
       setImportPreview(null)
@@ -255,30 +257,30 @@ export function PlayersPage() {
     <div className="workspace-page">
       <div className="workspace-heading workspace-heading--actions">
         <div>
-          <p className="eyebrow">Состав академии</p>
-          <h1>Игроки</h1>
-          <p>Храните основные данные игрока и контакты родителя в его карточке.</p>
+          <p className="eyebrow">{t('players.roster')}</p>
+          <h1>{t('dashboard.players')}</h1>
+          <p>{t('players.intro')}</p>
         </div>
         {canManage && (
           <div className="workspace-actions">
             <details className="file-menu">
-              <summary className="button button--secondary">Экспорт</summary>
+              <summary className="button button--secondary">{t('players.export')}</summary>
               <div className="file-menu__popover">
                 <button type="button" disabled={fileBusy} onClick={() => void handleDownload('export', 'xlsx')}>
-                  <strong>Excel XLSX</strong><span>Для работы в Excel и Google Sheets</span>
+                  <strong>Excel XLSX</strong><span>{t('players.xlsxHint')}</span>
                 </button>
                 <button type="button" disabled={fileBusy} onClick={() => void handleDownload('export', 'csv')}>
-                  <strong>CSV</strong><span>Универсальный табличный формат</span>
+                  <strong>CSV</strong><span>{t('players.csvHint')}</span>
                 </button>
               </div>
             </details>
             <button className="button button--secondary" type="button" disabled={fileBusy || !groups.length} onClick={() => {
               setImportError(''); setImportFile(null); setImportPreview(null); setImportOpen(true)
             }}>
-              Импорт
+              {t('players.import')}
             </button>
             <button className="button" type="button" disabled={!groups.length} onClick={() => setEditor('new')}>
-              Добавить игрока
+              {t('players.add')}
             </button>
           </div>
         )}
@@ -289,25 +291,25 @@ export function PlayersPage() {
 
       <div className="list-toolbar">
         <label>
-          <span>Фильтр по группе</span>
+          <span>{t('players.groupFilter')}</span>
           <select value={groupFilter} onChange={(event) => selectGroup(event.target.value)}>
-            <option value="">Все группы</option>
+            <option value="">{t('players.allGroups')}</option>
             {groups.map((group) => <option key={group.id} value={group.id}>{group.name} · {group.ageCategory}</option>)}
           </select>
         </label>
-        <span>{result ? `${result.totalElements} игроков` : 'Загрузка…'}</span>
+        <span>{result ? t('players.count', { count: result.totalElements }) : t('common.loading')}</span>
       </div>
 
       {!groups.length && !loading ? (
         <div className="list-state">
-          <strong>{canManage ? 'Сначала создайте группу' : 'Нет назначенных групп'}</strong>
+          <strong>{canManage ? t('players.createGroupFirst') : t('players.noAssignedGroups')}</strong>
           <span>{canManage
-            ? 'Каждый игрок должен состоять в одной из групп академии.'
-            : 'После назначения группы здесь появится её состав.'}</span>
-          {canManage && <Link className="button" to={academyPath('groups')}>Перейти к группам</Link>}
+            ? t('players.groupRequiredText')
+            : t('players.assignedGroupText')}</span>
+          {canManage && <Link className="button" to={academyPath('groups')}>{t('players.openGroups')}</Link>}
         </div>
       ) : loading ? (
-        <div className="list-state">Загружаем игроков…</div>
+        <div className="list-state">{t('players.loading')}</div>
       ) : result?.items.length ? (
         <div className="player-grid">
           {result.items.map((player) => (
@@ -318,32 +320,32 @@ export function PlayersPage() {
                   path={`/api/academies/${academy.id}/players/${player.id}/avatar`} />
                 <div>
                   <h2>{player.fullName}</h2>
-                  <p>{groupNames.get(player.groupId) || 'Группа'}</p>
+                  <p>{groupNames.get(player.groupId) || t('players.group')}</p>
                 </div>
               </div>
               <dl>
                 <div>
-                  <dt>Дата рождения</dt>
-                  <dd>{new Intl.DateTimeFormat('ru-RU').format(new Date(`${player.dateOfBirth}T00:00:00`))}</dd>
+                  <dt>{t('players.birthDate')}</dt>
+                  <dd>{new Intl.DateTimeFormat(intlLocale).format(new Date(`${player.dateOfBirth}T00:00:00`))}</dd>
                 </div>
                 <div>
-                  <dt>Родитель</dt>
-                  <dd>{player.parentName || 'Не указан'}</dd>
+                  <dt>{t('players.parent')}</dt>
+                  <dd>{player.parentName || t('players.notSpecified')}</dd>
                 </div>
                 <div>
-                  <dt>Телефон</dt>
-                  <dd>{player.parentPhone || 'Не указан'}</dd>
+                  <dt>{t('players.phone')}</dt>
+                  <dd>{player.parentPhone || t('players.notSpecified')}</dd>
                 </div>
               </dl>
               <div className="player-card__actions">
-                <Link className="button button--small" to={academyPath(`players/${player.id}`)}>Открыть профиль</Link>
+                <Link className="button button--small" to={academyPath(`players/${player.id}`)}>{t('players.openProfile')}</Link>
                 {canManage && (
                   <>
                   <button className="button button--secondary button--small" type="button" disabled={Boolean(actionId)} onClick={() => setEditor(player)}>
-                    Изменить
+                    {t('common.edit')}
                   </button>
                   <button className="text-button text-button--danger" type="button" disabled={Boolean(actionId)} onClick={() => void handleDelete(player)}>
-                    Удалить
+                    {t('common.delete')}
                   </button>
                   </>
                 )}
@@ -353,17 +355,17 @@ export function PlayersPage() {
         </div>
       ) : (
         <div className="list-state">
-          <strong>Игроков не найдено</strong>
-          <span>{groupFilter ? 'В выбранной группе пока нет игроков.' : canManage ? 'Добавьте первого игрока академии.' : 'В назначенных группах пока нет игроков.'}</span>
-          {canManage && <button className="button" type="button" onClick={() => setEditor('new')}>Добавить игрока</button>}
+          <strong>{t('players.notFound')}</strong>
+          <span>{groupFilter ? t('players.emptyGroup') : canManage ? t('players.addFirst') : t('players.noAssignedPlayers')}</span>
+          {canManage && <button className="button" type="button" onClick={() => setEditor('new')}>{t('players.add')}</button>}
         </div>
       )}
 
       {totalPages > 1 && (
-        <nav className="pagination" aria-label="Страницы игроков">
-          <button className="button button--secondary" type="button" disabled={page === 0 || loading} onClick={() => selectPage(page - 1)}>Назад</button>
-          <span>Страница {page + 1} из {totalPages}</span>
-          <button className="button button--secondary" type="button" disabled={page + 1 >= totalPages || loading} onClick={() => selectPage(page + 1)}>Далее</button>
+        <nav className="pagination" aria-label={t('players.pages')}>
+          <button className="button button--secondary" type="button" disabled={page === 0 || loading} onClick={() => selectPage(page - 1)}>{t('common.back')}</button>
+          <span>{t('common.pageOf', { page: page + 1, total: totalPages })}</span>
+          <button className="button button--secondary" type="button" disabled={page + 1 >= totalPages || loading} onClick={() => selectPage(page + 1)}>{t('common.next')}</button>
         </nav>
       )}
 
@@ -378,46 +380,46 @@ export function PlayersPage() {
           <div className="dialog dialog--wide" role="dialog" aria-modal="true" aria-labelledby="player-dialog-title">
             <div className="dialog__heading">
               <div>
-                <p className="eyebrow">{editor === 'new' ? 'Новый игрок' : 'Редактирование'}</p>
-                <h2 id="player-dialog-title">{editor === 'new' ? 'Добавить игрока' : editor.fullName}</h2>
+                <p className="eyebrow">{editor === 'new' ? t('players.new') : t('players.editing')}</p>
+                <h2 id="player-dialog-title">{editor === 'new' ? t('players.add') : editor.fullName}</h2>
               </div>
-              <button className="dialog__close" type="button" aria-label="Закрыть" onClick={() => setEditor(null)}>×</button>
+              <button className="dialog__close" type="button" aria-label={t('common.close')} onClick={() => setEditor(null)}>×</button>
             </div>
             <form key={editor === 'new' ? 'new' : editor.id} onSubmit={handleSave}>
               <div className="field-row">
                 <label className="field">
-                  <span>ФИО игрока</span>
+                  <span>{t('players.fullName')}</span>
                   <input name="fullName" defaultValue={editor === 'new' ? '' : editor.fullName} maxLength={200} required autoFocus />
                 </label>
                 <label className="field">
-                  <span>Дата рождения</span>
+                  <span>{t('players.birthDate')}</span>
                   <input name="dateOfBirth" type="date" defaultValue={editor === 'new' ? '' : editor.dateOfBirth} max={latestBirthDate()} required />
                 </label>
               </div>
               <label className="field">
-                <span>Группа</span>
+                <span>{t('players.group')}</span>
                 <select name="groupId" defaultValue={editor === 'new' ? groupFilter || groups[0]?.id : editor.groupId} required>
                   {groups.map((group) => <option key={group.id} value={group.id}>{group.name} · {group.ageCategory}</option>)}
                 </select>
               </label>
-              <div className="form-divider"><span>Контакты родителя</span></div>
+              <div className="form-divider"><span>{t('players.parentContacts')}</span></div>
               <label className="field">
-                <span>Имя родителя</span>
+                <span>{t('players.parentName')}</span>
                 <input name="parentName" defaultValue={editor === 'new' ? '' : editor.parentName || ''} maxLength={200} />
               </label>
               <div className="field-row">
                 <label className="field">
-                  <span>Телефон</span>
+                  <span>{t('players.phone')}</span>
                   <input name="parentPhone" type="tel" defaultValue={editor === 'new' ? '' : editor.parentPhone || ''} minLength={7} maxLength={30} pattern="[+0-9() .-]{7,30}" placeholder="+7 700 123 45 67" />
                 </label>
                 <label className="field">
-                  <span>Email</span>
+                  <span>{t('players.email')}</span>
                   <input name="parentEmail" type="email" defaultValue={editor === 'new' ? '' : editor.parentEmail || ''} maxLength={254} />
                 </label>
               </div>
               <div className="dialog__actions">
-                <button className="button button--secondary" type="button" onClick={() => setEditor(null)}>Отмена</button>
-                <button className="button" type="submit" disabled={Boolean(actionId)}>{actionId ? 'Сохраняем…' : 'Сохранить'}</button>
+                <button className="button button--secondary" type="button" onClick={() => setEditor(null)}>{t('common.cancel')}</button>
+                <button className="button" type="submit" disabled={Boolean(actionId)}>{actionId ? t('common.saving') : t('common.save')}</button>
               </div>
             </form>
           </div>
@@ -431,41 +433,41 @@ export function PlayersPage() {
           <div className="dialog dialog--wide" role="dialog" aria-modal="true" aria-labelledby="player-import-title">
             <div className="dialog__heading">
               <div>
-                <p className="eyebrow">Массовое добавление</p>
-                <h2 id="player-import-title">Импорт игроков</h2>
+                <p className="eyebrow">{t('players.bulkAdd')}</p>
+                <h2 id="player-import-title">{t('players.importTitle')}</h2>
               </div>
-              <button className="dialog__close" type="button" aria-label="Закрыть" disabled={fileBusy} onClick={() => setImportOpen(false)}>×</button>
+              <button className="dialog__close" type="button" aria-label={t('common.close')} disabled={fileBusy} onClick={() => setImportOpen(false)}>×</button>
             </div>
 
             {importError && <div className="alert alert--error" role="alert">{importError}</div>}
 
             <div className="import-guide">
-              <strong>1. Скачайте и заполните шаблон</strong>
-              <p>Не меняйте названия колонок. Группу укажите её точным названием или UUID, дату рождения — в формате ГГГГ-ММ-ДД.</p>
+              <strong>{t('players.importStep1')}</strong>
+              <p>{t('players.importGuide')}</p>
               <div className="inline-actions">
-                <button className="text-button" type="button" disabled={fileBusy} onClick={() => void handleDownload('template', 'xlsx')}>Шаблон XLSX</button>
-                <button className="text-button" type="button" disabled={fileBusy} onClick={() => void handleDownload('template', 'csv')}>Шаблон CSV</button>
+                <button className="text-button" type="button" disabled={fileBusy} onClick={() => void handleDownload('template', 'xlsx')}>{t('players.xlsxTemplate')}</button>
+                <button className="text-button" type="button" disabled={fileBusy} onClick={() => void handleDownload('template', 'csv')}>{t('players.csvTemplate')}</button>
               </div>
             </div>
 
             <label className="import-dropzone">
-              <strong>2. Выберите заполненный файл</strong>
-              <span>{importFile ? importFile.name : 'CSV или XLSX, не более 5 МБ и 5000 строк'}</span>
+              <strong>{t('players.importStep2')}</strong>
+              <span>{importFile ? importFile.name : t('players.importLimits')}</span>
               <input type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 disabled={fileBusy} onChange={(event) => void handleImportFile(event.target.files?.[0] || null)} />
             </label>
 
-            {fileBusy && <div className="import-status">Обрабатываем файл…</div>}
+            {fileBusy && <div className="import-status">{t('players.processing')}</div>}
             {importPreview && !fileBusy && (
               <div className={`import-result ${importPreview.errors.length ? 'import-result--error' : 'import-result--success'}`}>
                 <strong>{importPreview.errors.length
-                  ? `Найдены ошибки: ${importPreview.errors.length}`
-                  : `Файл готов: ${importPreview.validRows} игроков`}</strong>
+                  ? t('players.importErrors', { count: importPreview.errors.length })
+                  : t('players.importReady', { count: importPreview.validRows })}</strong>
                 {importPreview.errors.length > 0 && (
                   <div className="import-errors">
                     {importPreview.errors.map((item, index) => (
                       <p key={`${item.row}-${item.field}-${index}`}>
-                        <b>Строка {item.row}, {importFields[item.field] || item.field}:</b> {importMessages[item.message] || item.message}
+                        <b>{t('players.importRow', { row: item.row, field: importFields[item.field] ? t(importFields[item.field]) : item.field })}:</b> {importMessages[item.message] ? t(importMessages[item.message]) : item.message}
                       </p>
                     ))}
                   </div>
@@ -474,10 +476,10 @@ export function PlayersPage() {
             )}
 
             <div className="dialog__actions">
-              <button className="button button--secondary" type="button" disabled={fileBusy} onClick={() => setImportOpen(false)}>Отмена</button>
+              <button className="button button--secondary" type="button" disabled={fileBusy} onClick={() => setImportOpen(false)}>{t('common.cancel')}</button>
               <button className="button" type="button" disabled={fileBusy || !importPreview || importPreview.errors.length > 0 || importPreview.validRows === 0}
                 onClick={() => void handleImport()}>
-                Импортировать {importPreview?.validRows || ''}
+                {t('players.importCount', { count: importPreview?.validRows || '' })}
               </button>
             </div>
           </div>
