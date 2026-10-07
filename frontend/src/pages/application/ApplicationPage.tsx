@@ -5,16 +5,15 @@ import type { AcademyApplication, ApplicationStatus } from '../../entities/appli
 import { resendVerification } from '../../features/auth/api/authApi'
 import { useAuth } from '../../features/auth/model/useAuth'
 import { ApiError, errorMessage } from '../../shared/api/apiClient'
-
-const statusLabels: Record<ApplicationStatus, string> = {
-  EMAIL_UNVERIFIED: 'Ожидает подтверждения email',
-  PENDING: 'На рассмотрении',
-  APPROVED: 'Одобрена',
-  REJECTED: 'Отклонена',
-}
+import { useI18n } from '../../shared/i18n/useI18n'
 
 export function ApplicationPage() {
   const { token, account } = useAuth()
+  const { t, intlLocale } = useI18n()
+  const statusLabels: Record<ApplicationStatus, string> = {
+    EMAIL_UNVERIFIED: t('myApplication.unverified'), PENDING: t('myApplication.pending'),
+    APPROVED: t('applications.approved'), REJECTED: t('applications.rejected'),
+  }
   const [application, setApplication] = useState<AcademyApplication | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -27,14 +26,14 @@ export function ApplicationPage() {
       setApplication(await getMyApplication(token))
     } catch (requestError) {
       if (requestError instanceof ApiError && requestError.status === 404) {
-        setError('Для этого аккаунта заявка академии не найдена.')
+        setError(t('myApplication.accountNotFound'))
       } else {
         setError(errorMessage(requestError))
       }
     } finally {
       setLoading(false)
     }
-  }, [token])
+  }, [t, token])
 
   useEffect(() => {
     // oxlint-disable-next-line react/set-state-in-effect -- route data is loaded from the API on mount
@@ -48,7 +47,7 @@ export function ApplicationPage() {
     setError('')
     try {
       await resendVerification(token)
-      setNotice('Новый код отправлен. Для локальной разработки откройте Mailpit на порту 8025.')
+      setNotice(t('myApplication.codeSent'))
     } catch (requestError) {
       setError(errorMessage(requestError))
     } finally {
@@ -57,18 +56,18 @@ export function ApplicationPage() {
   }
 
   if (loading) {
-    return <div className="page-loader">Загружаем заявку…</div>
+    return <div className="page-loader">{t('applications.loading')}</div>
   }
 
   if (!application) {
     return (
       <section className="centered-page">
         <div className="empty-state">
-          <p className="eyebrow">Личный кабинет</p>
-          <h1>Заявка не найдена.</h1>
+          <p className="eyebrow">{t('auth.account')}</p>
+          <h1>{t('myApplication.notFound')}</h1>
           <p>{error}</p>
           {account?.platformRole === 'SUPER_ADMIN' && (
-            <Link className="button" to="/dashboard">Перейти в панель</Link>
+            <Link className="button" to="/dashboard">{t('myApplication.openDashboard')}</Link>
           )}
         </div>
       </section>
@@ -78,9 +77,9 @@ export function ApplicationPage() {
   return (
     <section className="application-page">
       <div className="section-heading">
-        <p className="eyebrow">Подключение академии</p>
+        <p className="eyebrow">{t('myApplication.connecting')}</p>
         <h1>{application.academyName}</h1>
-        <p>Заявка от {new Intl.DateTimeFormat('ru-RU', { dateStyle: 'long' }).format(new Date(application.createdAt))}</p>
+        <p>{t('myApplication.createdAt', { date: new Intl.DateTimeFormat(intlLocale, { dateStyle: 'long' }).format(new Date(application.createdAt)) })}</p>
       </div>
 
       {error && <div className="alert alert--error" role="alert">{error}</div>}
@@ -88,7 +87,7 @@ export function ApplicationPage() {
 
       <div className={`status-card status-card--${application.status.toLowerCase()}`}>
         <div>
-          <span className="status-card__label">Текущий статус</span>
+          <span className="status-card__label">{t('myApplication.currentStatus')}</span>
           <h2>{statusLabels[application.status]}</h2>
         </div>
         <span className="status-card__number">{application.status === 'APPROVED' ? '✓' : '•'}</span>
@@ -96,11 +95,11 @@ export function ApplicationPage() {
 
       <div className="application-details">
         <div>
-          <span>Email администратора</span>
+          <span>{t('myApplication.adminEmail')}</span>
           <strong>{application.applicantEmail}</strong>
         </div>
         <div>
-          <span>Имя администратора</span>
+          <span>{t('myApplication.adminName')}</span>
           <strong>{application.applicantName}</strong>
         </div>
       </div>
@@ -108,13 +107,13 @@ export function ApplicationPage() {
       {application.status === 'EMAIL_UNVERIFIED' && (
         <div className="application-action">
           <div>
-            <h2>Подтвердите email</h2>
-            <p>Введите код из письма, чтобы заявка поступила на рассмотрение.</p>
+            <h2>{t('myApplication.verifyEmail')}</h2>
+            <p>{t('myApplication.verifyText')}</p>
           </div>
           <div className="application-action__buttons">
-            <Link className="button" to="/verify-email">Ввести код</Link>
+            <Link className="button" to="/verify-email">{t('myApplication.enterCode')}</Link>
             <button className="button button--secondary" type="button" onClick={handleResend} disabled={resending}>
-              {resending ? 'Отправляем…' : 'Отправить повторно'}
+              {resending ? t('auth.sending') : t('myApplication.resend')}
             </button>
           </div>
         </div>
@@ -123,8 +122,8 @@ export function ApplicationPage() {
       {application.status === 'PENDING' && (
         <div className="application-action">
           <div>
-            <h2>Заявка у владельца платформы</h2>
-            <p>После проверки академия и ваш административный доступ будут созданы автоматически.</p>
+            <h2>{t('myApplication.withOwner')}</h2>
+            <p>{t('myApplication.pendingText')}</p>
           </div>
         </div>
       )}
@@ -132,18 +131,18 @@ export function ApplicationPage() {
       {application.status === 'APPROVED' && (
         <div className="application-action">
           <div>
-            <h2>Академия подключена</h2>
-            <p>Можно переходить к настройке групп, тренеров и игроков.</p>
+            <h2>{t('myApplication.connected')}</h2>
+            <p>{t('myApplication.connectedText')}</p>
           </div>
-          <Link className="button" to="/academy">Открыть CRM</Link>
+          <Link className="button" to="/academy">{t('myApplication.openCrm')}</Link>
         </div>
       )}
 
       {application.status === 'REJECTED' && (
         <div className="application-action application-action--danger">
           <div>
-            <h2>Причина отклонения</h2>
-            <p>{application.rejectionReason || 'Причина не указана.'}</p>
+            <h2>{t('applications.rejectionReason')}</h2>
+            <p>{application.rejectionReason || t('myApplication.noReason')}</p>
           </div>
         </div>
       )}
