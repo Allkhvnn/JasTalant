@@ -12,26 +12,12 @@ import type { Player } from '../../entities/player/model/types'
 import { useAuth } from '../../features/auth/model/useAuth'
 import { errorMessage } from '../../shared/api/apiClient'
 import type { PageResponse } from '../../shared/api/types'
+import { useI18n } from '../../shared/i18n/useI18n'
 
 const PAGE_SIZE = 20
-const statusLabels: Record<AttendanceStatus, string> = {
-  PRESENT: 'Присутствовал',
-  ABSENT: 'Отсутствовал',
-  LATE: 'Опоздал',
-  EXCUSED: 'Уважительная причина',
-}
 
-const developmentLabels: Array<[keyof Pick<DevelopmentAssessment,
-  'technique' | 'speed' | 'endurance' | 'physicalFitness' | 'gameIntelligence'>, string]> = [
-  ['technique', 'Техника'],
-  ['speed', 'Скорость'],
-  ['endurance', 'Выносливость'],
-  ['physicalFitness', 'Физическая подготовка'],
-  ['gameIntelligence', 'Игровой интеллект'],
-]
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat('ru-RU', { dateStyle: 'long' }).format(new Date(`${value}T00:00:00`))
+function formatDate(value: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, { dateStyle: 'long' }).format(new Date(`${value}T00:00:00`))
 }
 
 function age(dateOfBirth: string) {
@@ -45,7 +31,22 @@ function age(dateOfBirth: string) {
 
 export function ParentPage() {
   const { account, academies, token } = useAuth()
+  const { t, intlLocale } = useI18n()
   const membership = academies.find((academy) => academy.roles.includes('PARENT'))
+  const statusLabels: Record<AttendanceStatus, string> = {
+    PRESENT: t('attendance.present'),
+    ABSENT: t('attendance.absent'),
+    LATE: t('attendance.late'),
+    EXCUSED: t('attendance.excused'),
+  }
+  const developmentLabels: Array<[keyof Pick<DevelopmentAssessment,
+    'technique' | 'speed' | 'endurance' | 'physicalFitness' | 'gameIntelligence'>, string]> = [
+    ['technique', t('development.technique')],
+    ['speed', t('development.speed')],
+    ['endurance', t('development.endurance')],
+    ['physicalFitness', t('development.physicalFitness')],
+    ['gameIntelligence', t('development.gameIntelligence')],
+  ]
   const [searchParams, setSearchParams] = useSearchParams()
   const [requestedChildId] = useState(() => searchParams.get('childId') || '')
   const [children, setChildren] = useState<Player[]>([])
@@ -152,10 +153,10 @@ export function ParentPage() {
     return (
       <section className="centered-page">
         <div className="empty-state">
-          <p className="eyebrow">Кабинет родителя</p>
-          <h1>Доступ не найден.</h1>
-          <p>Администратор академии должен пригласить вас как родителя.</p>
-          <Link className="button button--secondary" to="/dashboard">Вернуться в кабинет</Link>
+          <p className="eyebrow">{t('parent.portal')}</p>
+          <h1>{t('parent.noAccess')}</h1>
+          <p>{t('parent.noAccessText')}</p>
+          <Link className="button button--secondary" to="/dashboard">{t('parent.backDashboard')}</Link>
         </div>
       </section>
     )
@@ -167,13 +168,13 @@ export function ParentPage() {
     <section className="parent-page">
       <div className="parent-hero">
         <div>
-          <p className="eyebrow">Кабинет родителя</p>
-          <h1>Здравствуйте, {account?.fullName || 'родитель'}.</h1>
-          <p>Академия «{membership.academyName}». Здесь доступны данные только ваших детей.</p>
+          <p className="eyebrow">{t('parent.portal')}</p>
+          <h1>{t('parent.hello', { name: account?.fullName || t('dashboard.parent').toLowerCase() })}</h1>
+          <p>{t('parent.academyIntro', { academy: membership.academyName })}</p>
         </div>
         {children.length > 1 && (
           <label className="parent-child-select">
-            <span>Ребёнок</span>
+            <span>{t('parent.child')}</span>
             <select value={childId} onChange={(event) => selectChild(event.target.value)}>
               {children.map((child) => <option value={child.id} key={child.id}>{child.fullName}</option>)}
             </select>
@@ -184,45 +185,45 @@ export function ParentPage() {
       {error && <div className="alert alert--error" role="alert">{error}</div>}
 
       {childrenLoading ? (
-        <div className="list-state">Загружаем данные детей…</div>
+        <div className="list-state">{t('parent.loadingChildren')}</div>
       ) : !selectedChild ? (
         <div className="list-state">
-          <strong>Дети ещё не добавлены</strong>
-          <span>Попросите администратора академии связать ребёнка с вашим аккаунтом.</span>
+          <strong>{t('parent.noChildren')}</strong>
+          <span>{t('parent.noChildrenText')}</span>
         </div>
       ) : (
         <>
           <div className="child-profile">
             <div className="child-profile__avatar" aria-hidden="true">{selectedChild.fullName.slice(0, 1).toUpperCase()}</div>
             <div className="child-profile__identity">
-              <span>Игрок академии</span>
+              <span>{t('parent.academyPlayer')}</span>
               <h2>{selectedChild.fullName}</h2>
-              <p>{age(selectedChild.dateOfBirth)} лет · дата рождения {formatDate(selectedChild.dateOfBirth)}</p>
+              <p>{t('parent.ageBirth', { age: age(selectedChild.dateOfBirth), date: formatDate(selectedChild.dateOfBirth, intlLocale) })}</p>
             </div>
             <div className="child-profile__metric">
-              <span>Посещаемость</span>
+              <span>{t('workspace.attendance')}</span>
               <strong>{attendance?.items.length ? `${summary.percentage}%` : '—'}</strong>
-              <small>по последним {attendance?.items.length || 0} отметкам</small>
+              <small>{t('parent.lastMarks', { count: attendance?.items.length || 0 })}</small>
             </div>
           </div>
 
           <div className="parent-metrics">
-            <div><span>Посещено</span><strong>{summary.attended}</strong></div>
-            <div><span>Пропущено</span><strong>{summary.missed}</strong></div>
-            <div><span>Уважительная</span><strong>{summary.excused}</strong></div>
-            <div><span>Всего записей</span><strong>{attendance?.totalElements ?? '—'}</strong></div>
+            <div><span>{t('parent.attended')}</span><strong>{summary.attended}</strong></div>
+            <div><span>{t('parent.missed')}</span><strong>{summary.missed}</strong></div>
+            <div><span>{t('attendance.excused')}</span><strong>{summary.excused}</strong></div>
+            <div><span>{t('parent.totalRecords')}</span><strong>{attendance?.totalElements ?? '—'}</strong></div>
           </div>
 
           <div className="parent-section-heading">
             <div>
-              <p className="eyebrow">Развитие игрока</p>
-              <h2>Показатели</h2>
+              <p className="eyebrow">{t('profile.development')}</p>
+              <h2>{t('parent.metrics')}</h2>
             </div>
-            {development[0] && <span>Последняя оценка: {formatDate(development[0].assessmentDate)}</span>}
+            {development[0] && <span>{t('parent.latestAssessment', { date: formatDate(development[0].assessmentDate, intlLocale) })}</span>}
           </div>
 
           {developmentLoading ? (
-            <div className="list-state">Загружаем показатели…</div>
+            <div className="list-state">{t('parent.loadingMetrics')}</div>
           ) : development.length ? (
             <>
               <div className="development-summary development-summary--parent">
@@ -230,7 +231,7 @@ export function ParentPage() {
                   <div key={key}>
                     <span>{label}</span>
                     <strong>{development[0][key].toFixed(1)}</strong>
-                    <small>из 10</small>
+                    <small>{t('parent.outOfTen')}</small>
                     <span className="parent-development-bar" aria-hidden="true">
                       <i style={{ width: `${development[0][key] * 10}%` }} />
                     </span>
@@ -241,7 +242,7 @@ export function ParentPage() {
                 {development.map((assessment) => (
                   <article className="development-record" key={assessment.id}>
                     <div className="development-record__heading">
-                      <div><time>{formatDate(assessment.assessmentDate)}</time><span>Тренер: {assessment.createdByName}</span></div>
+                      <div><time>{formatDate(assessment.assessmentDate, intlLocale)}</time><span>{t('parent.coach', { name: assessment.createdByName })}</span></div>
                     </div>
                     <div className="development-record__metrics">
                       {developmentLabels.map(([key, label]) => <span key={key}>{label} <strong>{assessment[key].toFixed(1)}</strong></span>)}
@@ -252,26 +253,26 @@ export function ParentPage() {
               </div>
             </>
           ) : (
-            <div className="list-state"><strong>Оценок пока нет</strong><span>После тестирования тренер добавит показатели развития.</span></div>
+            <div className="list-state"><strong>{t('parent.noAssessments')}</strong><span>{t('parent.noAssessmentsText')}</span></div>
           )}
 
           <div className="parent-section-heading">
             <div>
-              <p className="eyebrow">История тренировок</p>
-              <h2>Посещаемость</h2>
+              <p className="eyebrow">{t('parent.trainingHistory')}</p>
+              <h2>{t('workspace.attendance')}</h2>
             </div>
           </div>
 
           {attendanceLoading ? (
-            <div className="list-state">Загружаем посещаемость…</div>
+            <div className="list-state">{t('parent.loadingAttendance')}</div>
           ) : attendance?.items.length ? (
             <div className="parent-attendance-list">
               {attendance.items.map((item) => (
                 <article className="parent-attendance-row" key={item.sessionId}>
-                  <time dateTime={item.trainingDate}>{formatDate(item.trainingDate)}</time>
+                  <time dateTime={item.trainingDate}>{formatDate(item.trainingDate, intlLocale)}</time>
                   <div>
                     <strong>{item.groupName}</strong>
-                    <span>{item.comment || 'Комментарий не указан'}</span>
+                    <span>{item.comment || t('parent.noComment')}</span>
                   </div>
                   <span className={`parent-attendance-status parent-attendance-status--${item.status.toLowerCase()}`}>
                     {statusLabels[item.status]}
@@ -281,16 +282,16 @@ export function ParentPage() {
             </div>
           ) : (
             <div className="list-state">
-              <strong>Отметок пока нет</strong>
-              <span>После первой отмеченной тренировки история появится здесь.</span>
+              <strong>{t('parent.noMarks')}</strong>
+              <span>{t('parent.noMarksText')}</span>
             </div>
           )}
 
           {totalPages > 1 && (
-            <nav className="pagination" aria-label="Страницы посещаемости">
-              <button className="button button--secondary" type="button" disabled={page === 0 || attendanceLoading} onClick={() => selectPage(page - 1)}>Назад</button>
-              <span>Страница {page + 1} из {totalPages}</span>
-              <button className="button button--secondary" type="button" disabled={page + 1 >= totalPages || attendanceLoading} onClick={() => selectPage(page + 1)}>Далее</button>
+            <nav className="pagination" aria-label={t('parent.attendancePages')}>
+              <button className="button button--secondary" type="button" disabled={page === 0 || attendanceLoading} onClick={() => selectPage(page - 1)}>{t('common.back')}</button>
+              <span>{t('common.pageOf', { page: page + 1, total: totalPages })}</span>
+              <button className="button button--secondary" type="button" disabled={page + 1 >= totalPages || attendanceLoading} onClick={() => selectPage(page + 1)}>{t('common.next')}</button>
             </nav>
           )}
         </>
