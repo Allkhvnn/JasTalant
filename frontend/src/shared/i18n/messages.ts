@@ -257,6 +257,17 @@ const ru = {
   'applications.decision': 'Решение по заявке', 'applications.rejectTitle': 'Отклонить «{academy}»',
   'applications.reasonHint': 'Заявитель увидит этот текст в личном кабинете.',
   'applications.rejectApplication': 'Отклонить заявку',
+  'auth.account': 'Личный кабинет', 'auth.welcomeBack': 'С возвращением.',
+  'auth.loginIntro': 'Войдите, чтобы продолжить работу со своей академией.',
+  'auth.credentials': 'Введите данные вашей учётной записи.', 'auth.password': 'Пароль',
+  'auth.forgotPassword': 'Забыли пароль?', 'auth.signingIn': 'Входим…', 'auth.noAccount': 'Ещё нет аккаунта?',
+  'auth.passwordMismatch': 'Пароли не совпадают.', 'auth.newAcademy': 'Новая академия',
+  'auth.connectTeam': 'Подключите свою команду.',
+  'auth.registerIntro': 'После подтверждения email заявка поступит владельцу платформы. Доступ откроется после одобрения.',
+  'auth.academyApplication': 'Заявка академии', 'auth.allRequired': 'Все поля обязательны.',
+  'auth.yourName': 'Ваше имя', 'auth.repeatPassword': 'Повторите пароль',
+  'auth.passwordHint': 'Используйте не менее 12 символов.', 'auth.sending': 'Отправляем…',
+  'auth.sendApplication': 'Отправить заявку', 'auth.alreadyRegistered': 'Уже зарегистрированы?',
 } as const
 
 type MessageKey = keyof typeof ru
@@ -519,6 +530,17 @@ const kk: Messages = {
   'applications.decision': 'Өтінім бойынша шешім', 'applications.rejectTitle': '«{academy}» өтінімін қабылдамау',
   'applications.reasonHint': 'Өтініш беруші бұл мәтінді жеке кабинетінде көреді.',
   'applications.rejectApplication': 'Өтінімді қабылдамау',
+  'auth.account': 'Жеке кабинет', 'auth.welcomeBack': 'Қайта келгеніңізге қуаныштымыз.',
+  'auth.loginIntro': 'Академияңызбен жұмысты жалғастыру үшін жүйеге кіріңіз.',
+  'auth.credentials': 'Аккаунт деректерін енгізіңіз.', 'auth.password': 'Құпиясөз',
+  'auth.forgotPassword': 'Құпиясөзді ұмыттыңыз ба?', 'auth.signingIn': 'Кіру…', 'auth.noAccount': 'Аккаунтыңыз жоқ па?',
+  'auth.passwordMismatch': 'Құпиясөздер сәйкес келмейді.', 'auth.newAcademy': 'Жаңа академия',
+  'auth.connectTeam': 'Командаңызды қосыңыз.',
+  'auth.registerIntro': 'Email расталғаннан кейін өтінім платформа иесіне түседі. Қолжетімділік мақұлданғаннан кейін ашылады.',
+  'auth.academyApplication': 'Академия өтінімі', 'auth.allRequired': 'Барлық өріс міндетті.',
+  'auth.yourName': 'Атыңыз', 'auth.repeatPassword': 'Құпиясөзді қайталаңыз',
+  'auth.passwordHint': 'Кемінде 12 таңба қолданыңыз.', 'auth.sending': 'Жіберілуде…',
+  'auth.sendApplication': 'Өтінімді жіберу', 'auth.alreadyRegistered': 'Тіркелгенсіз бе?',
 }
 
 const en: Messages = {
@@ -778,6 +800,17 @@ const en: Messages = {
   'applications.decision': 'Application decision', 'applications.rejectTitle': 'Reject “{academy}”',
   'applications.reasonHint': 'The applicant will see this text in their account.',
   'applications.rejectApplication': 'Reject application',
+  'auth.account': 'Account', 'auth.welcomeBack': 'Welcome back.',
+  'auth.loginIntro': 'Sign in to continue working with your academy.',
+  'auth.credentials': 'Enter your account credentials.', 'auth.password': 'Password',
+  'auth.forgotPassword': 'Forgot your password?', 'auth.signingIn': 'Signing in…', 'auth.noAccount': 'No account yet?',
+  'auth.passwordMismatch': 'Passwords do not match.', 'auth.newAcademy': 'New academy',
+  'auth.connectTeam': 'Connect your team.',
+  'auth.registerIntro': 'After email verification, the application will be sent to the platform owner. Access opens after approval.',
+  'auth.academyApplication': 'Academy application', 'auth.allRequired': 'All fields are required.',
+  'auth.yourName': 'Your name', 'auth.repeatPassword': 'Repeat password',
+  'auth.passwordHint': 'Use at least 12 characters.', 'auth.sending': 'Sending…',
+  'auth.sendApplication': 'Send application', 'auth.alreadyRegistered': 'Already registered?',
 }
 
 export const messages: Record<Locale, Messages> = { kk, ru, en }

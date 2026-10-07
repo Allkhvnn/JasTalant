@@ -2,9 +2,11 @@ import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { register } from '../../features/auth/api/authApi'
 import { errorMessage } from '../../shared/api/apiClient'
+import { useI18n } from '../../shared/i18n/useI18n'
 
 export function RegisterPage() {
   const navigate = useNavigate()
+  const { t } = useI18n()
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
@@ -15,7 +17,7 @@ export function RegisterPage() {
     const passwordConfirmation = String(data.get('passwordConfirmation'))
 
     if (password !== passwordConfirmation) {
-      setError('Пароли не совпадают.')
+      setError(t('auth.passwordMismatch'))
       return
     }
 
@@ -41,31 +43,28 @@ export function RegisterPage() {
   return (
     <section className="auth-page auth-page--wide">
       <div className="auth-copy">
-        <p className="eyebrow">Новая академия</p>
-        <h1>Подключите свою команду.</h1>
-        <p>
-          После подтверждения email заявка поступит владельцу платформы. Доступ откроется после
-          одобрения.
-        </p>
+        <p className="eyebrow">{t('auth.newAcademy')}</p>
+        <h1>{t('auth.connectTeam')}</h1>
+        <p>{t('auth.registerIntro')}</p>
       </div>
 
       <form className="auth-card" onSubmit={handleSubmit}>
         <div className="form-heading">
           <span className="form-heading__step">01</span>
           <div>
-            <h2>Заявка академии</h2>
-            <p>Все поля обязательны.</p>
+            <h2>{t('auth.academyApplication')}</h2>
+            <p>{t('auth.allRequired')}</p>
           </div>
         </div>
 
         {error && <div className="alert alert--error" role="alert">{error}</div>}
 
         <label className="field">
-          <span>Название академии</span>
+          <span>{t('platform.academyName')}</span>
           <input name="academyName" autoComplete="organization" maxLength={200} required />
         </label>
         <label className="field">
-          <span>Ваше имя</span>
+          <span>{t('auth.yourName')}</span>
           <input name="fullName" autoComplete="name" maxLength={200} required />
         </label>
         <label className="field">
@@ -74,7 +73,7 @@ export function RegisterPage() {
         </label>
         <div className="field-row">
           <label className="field">
-            <span>Пароль</span>
+            <span>{t('auth.password')}</span>
             <input
               name="password"
               type="password"
@@ -85,7 +84,7 @@ export function RegisterPage() {
             />
           </label>
           <label className="field">
-            <span>Повторите пароль</span>
+            <span>{t('auth.repeatPassword')}</span>
             <input
               name="passwordConfirmation"
               type="password"
@@ -96,14 +95,14 @@ export function RegisterPage() {
             />
           </label>
         </div>
-        <p className="field-hint">Используйте не менее 12 символов.</p>
+        <p className="field-hint">{t('auth.passwordHint')}</p>
 
         <button className="button button--full" type="submit" disabled={submitting}>
-          {submitting ? 'Отправляем…' : 'Отправить заявку'}
+          {submitting ? t('auth.sending') : t('auth.sendApplication')}
         </button>
 
         <p className="form-footnote">
-          Уже зарегистрированы? <Link to="/login">Войти</Link>
+          {t('auth.alreadyRegistered')} <Link to="/login">{t('common.login')}</Link>
         </p>
       </form>
     </section>
