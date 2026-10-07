@@ -314,6 +314,7 @@ const ru = {
   'accept.hasAccount': 'Уже есть аккаунт?', 'accept.signInAccept': 'Войти и принять',
   'app.loadingProfile': 'Загружаем ваш профиль…', 'app.checkingAccess': 'Проверяем права доступа…',
   'app.openingAcademy': 'Открываем академию…',
+  'layout.home': 'JasTalant — главная', 'layout.navigation': 'Основная навигация', 'layout.country': 'Казахстан',
 } as const
 
 type MessageKey = keyof typeof ru
@@ -633,6 +634,7 @@ const kk: Messages = {
   'accept.hasAccount': 'Аккаунтыңыз бар ма?', 'accept.signInAccept': 'Кіріп, қабылдау',
   'app.loadingProfile': 'Профиліңіз жүктелуде…', 'app.checkingAccess': 'Қолжетімділік құқықтары тексерілуде…',
   'app.openingAcademy': 'Академия ашылуда…',
+  'layout.home': 'JasTalant — басты бет', 'layout.navigation': 'Негізгі навигация', 'layout.country': 'Қазақстан',
 }
 
 const en: Messages = {
@@ -949,6 +951,7 @@ const en: Messages = {
   'accept.hasAccount': 'Already have an account?', 'accept.signInAccept': 'Sign in and accept',
   'app.loadingProfile': 'Loading your profile…', 'app.checkingAccess': 'Checking access rights…',
   'app.openingAcademy': 'Opening academy…',
+  'layout.home': 'JasTalant — home', 'layout.navigation': 'Main navigation', 'layout.country': 'Kazakhstan',
 }
 
 export const messages: Record<Locale, Messages> = { kk, ru, en }

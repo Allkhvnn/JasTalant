@@ -31,10 +31,10 @@ export function AppLayout() {
   return (
     <div className="page-shell">
       <header className="topbar">
-        <Link className="brand-link" to="/" aria-label="JasTalant — главная">
+        <Link className="brand-link" to="/" aria-label={t('layout.home')}>
           <BrandMark />
         </Link>
-        <nav className="topbar__nav" aria-label="Основная навигация">
+        <nav className="topbar__nav" aria-label={t('layout.navigation')}>
           {isAuthenticated ? (
             <>
               <NavLink className="topbar__mobile-dashboard" to="/dashboard">{t('common.dashboard')}</NavLink>
@@ -71,7 +71,7 @@ export function AppLayout() {
 
       <footer>
         <span>JasTalant</span>
-        <span>Казахстан · 2026</span>
+        <span>{t('layout.country')} · 2026</span>
       </footer>
     </div>
   )
