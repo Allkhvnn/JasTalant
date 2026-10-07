@@ -12,36 +12,27 @@ import type {
 } from '../../entities/application/model/types'
 import { useAuth } from '../../features/auth/model/useAuth'
 import { errorMessage } from '../../shared/api/apiClient'
+import { useI18n } from '../../shared/i18n/useI18n'
 
 const PAGE_SIZE = 10
 
-const filters: Array<{ value: ApplicationStatus; label: string }> = [
-  { value: 'PENDING', label: 'Новые' },
-  { value: 'APPROVED', label: 'Одобренные' },
-  { value: 'REJECTED', label: 'Отклонённые' },
-  { value: 'EMAIL_UNVERIFIED', label: 'Без подтверждения' },
-]
-
-const statusLabels: Record<ApplicationStatus, string> = {
-  EMAIL_UNVERIFIED: 'Email не подтверждён',
-  PENDING: 'Ожидает решения',
-  APPROVED: 'Одобрена',
-  REJECTED: 'Отклонена',
-}
-
-const dateFormatter = new Intl.DateTimeFormat('ru-RU', {
-  day: '2-digit',
-  month: 'short',
-  year: 'numeric',
-  hour: '2-digit',
-  minute: '2-digit',
-})
+const filterValues: ApplicationStatus[] = ['PENDING', 'APPROVED', 'REJECTED', 'EMAIL_UNVERIFIED']
 
 export function PlatformApplicationsPage() {
   const { token } = useAuth()
+  const { t, intlLocale } = useI18n()
+  const filters: Array<{ value: ApplicationStatus; label: string }> = [
+    { value: 'PENDING', label: t('applications.new') }, { value: 'APPROVED', label: t('applications.approvedPlural') },
+    { value: 'REJECTED', label: t('applications.rejectedPlural') }, { value: 'EMAIL_UNVERIFIED', label: t('applications.unverifiedPlural') },
+  ]
+  const statusLabels: Record<ApplicationStatus, string> = {
+    EMAIL_UNVERIFIED: t('applications.unverified'), PENDING: t('applications.pending'),
+    APPROVED: t('applications.approved'), REJECTED: t('applications.rejected'),
+  }
+  const dateFormatter = new Intl.DateTimeFormat(intlLocale, { dateStyle: 'medium', timeStyle: 'short' })
   const [searchParams, setSearchParams] = useSearchParams()
   const requestedStatus = searchParams.get('status') as ApplicationStatus | null
-  const initialStatus = filters.some((filter) => filter.value === requestedStatus) ? requestedStatus! : 'PENDING'
+  const initialStatus = filterValues.includes(requestedStatus as ApplicationStatus) ? requestedStatus! : 'PENDING'
   const [status, setStatus] = useState<ApplicationStatus>(initialStatus)
   const [page, setPage] = useState(0)
   const [result, setResult] = useState<AcademyApplicationPage | null>(null)
@@ -77,9 +68,9 @@ export function PlatformApplicationsPage() {
   useEffect(() => {
     if (!token) return
     let cancelled = false
-    Promise.all(filters.map(async (filter) => ({
-      status: filter.value,
-      total: (await getApplications(token, filter.value, 0, 1)).totalElements,
+    Promise.all(filterValues.map(async (filterStatus) => ({
+      status: filterStatus,
+      total: (await getApplications(token, filterStatus, 0, 1)).totalElements,
     })))
       .then((items) => {
         if (!cancelled) setCounts(Object.fromEntries(items.map((item) => [item.status, item.total])))
@@ -141,7 +132,7 @@ export function PlatformApplicationsPage() {
     setNotice('')
     try {
       await approveApplication(token, application.id)
-      setNotice(`Академия «${application.academyName}» одобрена.`)
+      setNotice(t('applications.approvedNotice', { academy: application.academyName }))
       setApprovalTarget(null)
       refreshAfterAction()
     } catch (requestError) {
@@ -163,7 +154,7 @@ export function PlatformApplicationsPage() {
     setNotice('')
     try {
       await rejectApplication(token, rejectionTarget.id, reason)
-      setNotice(`Заявка академии «${rejectionTarget.academyName}» отклонена.`)
+      setNotice(t('applications.rejectedNotice', { academy: rejectionTarget.academyName }))
       setRejectionTarget(null)
       refreshAfterAction()
     } catch (requestError) {
@@ -179,17 +170,17 @@ export function PlatformApplicationsPage() {
     <section className="admin-page">
       <div className="admin-heading">
         <div>
-          <p className="eyebrow">Панель владельца</p>
-          <h1>Заявки академий</h1>
-          <p>Проверяйте данные заявителей перед созданием новой академии.</p>
+          <p className="eyebrow">{t('platform.ownerPanel')}</p>
+          <h1>{t('applications.title')}</h1>
+          <p>{t('applications.intro')}</p>
         </div>
         <div className="admin-heading__count">
           <strong>{result?.totalElements ?? '—'}</strong>
-          <span>в выбранном статусе</span>
+          <span>{t('applications.selectedStatus')}</span>
         </div>
       </div>
 
-      <div className="status-filters" role="tablist" aria-label="Статус заявки">
+      <div className="status-filters" role="tablist" aria-label={t('applications.status')}>
         {filters.map((filter) => (
           <button
             key={filter.value}
@@ -209,7 +200,7 @@ export function PlatformApplicationsPage() {
       {notice && <div className="alert alert--success" role="status">{notice}</div>}
 
       {loading ? (
-        <div className="list-state">Загружаем заявки…</div>
+        <div className="list-state">{t('applications.loading')}</div>
       ) : result?.items.length ? (
         <div className="application-list">
           {result.items.map((application) => (
@@ -227,7 +218,7 @@ export function PlatformApplicationsPage() {
 
                 <dl className="review-card__details">
                   <div>
-                    <dt>Заявитель</dt>
+                    <dt>{t('applications.applicant')}</dt>
                     <dd>{application.applicantName}</dd>
                   </div>
                   <div>
@@ -236,7 +227,7 @@ export function PlatformApplicationsPage() {
                   </div>
                   {application.reviewedAt && (
                     <div>
-                      <dt>Рассмотрена</dt>
+                      <dt>{t('applications.reviewed')}</dt>
                       <dd>{dateFormatter.format(new Date(application.reviewedAt))}</dd>
                     </div>
                   )}
@@ -244,7 +235,7 @@ export function PlatformApplicationsPage() {
 
                 {application.rejectionReason && (
                   <div className="review-card__reason">
-                    <span>Причина отклонения</span>
+                    <span>{t('applications.rejectionReason')}</span>
                     <p>{application.rejectionReason}</p>
                   </div>
                 )}
@@ -258,7 +249,7 @@ export function PlatformApplicationsPage() {
                     disabled={Boolean(actionId)}
                     onClick={() => setApprovalTarget(application)}
                   >
-                    {actionId === application.id ? 'Обрабатываем…' : 'Одобрить'}
+                    {actionId === application.id ? t('applications.processing') : t('applications.approve')}
                   </button>
                   <button
                     className="button button--danger"
@@ -266,7 +257,7 @@ export function PlatformApplicationsPage() {
                     disabled={Boolean(actionId)}
                     onClick={() => setRejectionTarget(application)}
                   >
-                    Отклонить
+                    {t('applications.reject')}
                   </button>
                 </div>
               )}
@@ -275,29 +266,29 @@ export function PlatformApplicationsPage() {
         </div>
       ) : (
         <div className="list-state">
-          <strong>Заявок нет</strong>
-          <span>В выбранном статусе пока ничего не найдено.</span>
+          <strong>{t('applications.empty')}</strong>
+          <span>{t('applications.emptyText')}</span>
         </div>
       )}
 
       {totalPages > 1 && (
-        <nav className="pagination" aria-label="Страницы заявок">
+        <nav className="pagination" aria-label={t('applications.pages')}>
           <button
             className="button button--secondary"
             type="button"
             disabled={page === 0 || loading}
             onClick={() => selectPage(page - 1)}
           >
-            Назад
+            {t('common.back')}
           </button>
-          <span>Страница {page + 1} из {totalPages}</span>
+          <span>{t('common.pageOf', { page: page + 1, total: totalPages })}</span>
           <button
             className="button button--secondary"
             type="button"
             disabled={page + 1 >= totalPages || loading}
             onClick={() => selectPage(page + 1)}
           >
-            Далее
+            {t('common.next')}
           </button>
         </nav>
       )}
@@ -313,18 +304,18 @@ export function PlatformApplicationsPage() {
           <div className="dialog" role="dialog" aria-modal="true" aria-labelledby="approve-title">
             <div className="dialog__heading">
               <div>
-                <p className="eyebrow">Подтверждение решения</p>
-                <h2 id="approve-title">Одобрить «{approvalTarget.academyName}»?</h2>
+                <p className="eyebrow">{t('applications.confirmDecision')}</p>
+                <h2 id="approve-title">{t('applications.approveTitle', { academy: approvalTarget.academyName })}</h2>
               </div>
-              <button className="dialog__close" type="button" aria-label="Закрыть" onClick={() => setApprovalTarget(null)}>×</button>
+              <button className="dialog__close" type="button" aria-label={t('common.close')} onClick={() => setApprovalTarget(null)}>×</button>
             </div>
             <p className="dialog__description">
-              Будет создана новая академия, а заявитель {approvalTarget.applicantName} получит роль администратора.
+              {t('applications.approveText', { name: approvalTarget.applicantName })}
             </p>
             <div className="dialog__actions">
-              <button className="button button--secondary" type="button" onClick={() => setApprovalTarget(null)}>Отмена</button>
+              <button className="button button--secondary" type="button" onClick={() => setApprovalTarget(null)}>{t('common.cancel')}</button>
               <button className="button" type="button" disabled={actionId === approvalTarget.id} onClick={() => void handleApprove(approvalTarget)}>
-                {actionId === approvalTarget.id ? 'Создаём академию…' : 'Одобрить и создать'}
+                {actionId === approvalTarget.id ? t('applications.creating') : t('applications.approveCreate')}
               </button>
             </div>
           </div>
@@ -342,13 +333,13 @@ export function PlatformApplicationsPage() {
           <div className="dialog" role="dialog" aria-modal="true" aria-labelledby="reject-title">
             <div className="dialog__heading">
               <div>
-                <p className="eyebrow">Решение по заявке</p>
-                <h2 id="reject-title">Отклонить «{rejectionTarget.academyName}»</h2>
+                <p className="eyebrow">{t('applications.decision')}</p>
+                <h2 id="reject-title">{t('applications.rejectTitle', { academy: rejectionTarget.academyName })}</h2>
               </div>
               <button
                 className="dialog__close"
                 type="button"
-                aria-label="Закрыть"
+                aria-label={t('common.close')}
                 onClick={() => setRejectionTarget(null)}
               >
                 ×
@@ -356,16 +347,16 @@ export function PlatformApplicationsPage() {
             </div>
             <form onSubmit={handleReject}>
               <label className="field">
-                <span>Причина отклонения</span>
+                <span>{t('applications.rejectionReason')}</span>
                 <textarea name="reason" maxLength={1000} rows={5} required autoFocus />
               </label>
-              <p className="field-hint">Заявитель увидит этот текст в личном кабинете.</p>
+              <p className="field-hint">{t('applications.reasonHint')}</p>
               <div className="dialog__actions">
                 <button className="button button--secondary" type="button" onClick={() => setRejectionTarget(null)}>
-                  Отмена
+                  {t('common.cancel')}
                 </button>
                 <button className="button button--danger" type="submit" disabled={actionId === rejectionTarget.id}>
-                  {actionId === rejectionTarget.id ? 'Сохраняем…' : 'Отклонить заявку'}
+                  {actionId === rejectionTarget.id ? t('common.saving') : t('applications.rejectApplication')}
                 </button>
               </div>
             </form>
