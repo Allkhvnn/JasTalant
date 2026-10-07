@@ -2,12 +2,14 @@ import { useState, type FormEvent } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { verifyEmail } from '../../features/auth/api/authApi'
 import { errorMessage } from '../../shared/api/apiClient'
+import { useI18n } from '../../shared/i18n/useI18n'
 
 type VerificationLocationState = {
   email?: string
 }
 
 export function VerifyEmailPage() {
+  const { t } = useI18n()
   const location = useLocation()
   const [searchParams] = useSearchParams()
   const locationState = location.state as VerificationLocationState | null
@@ -37,22 +39,21 @@ export function VerifyEmailPage() {
         <div className="status-icon" aria-hidden="true">@</div>
         {verified ? (
           <div className="result-copy">
-            <p className="eyebrow">Email подтверждён</p>
-            <h1>Заявка отправлена.</h1>
-            <p>Теперь войдите в аккаунт и следите за статусом рассмотрения.</p>
+            <p className="eyebrow">{t('verify.confirmed')}</p>
+            <h1>{t('verify.applicationSent')}</h1>
+            <p>{t('verify.sentText')}</p>
             <Link className="button button--full" to="/login">
-              Перейти ко входу
+              {t('recovery.goLogin')}
             </Link>
           </div>
         ) : (
           <>
             <div className="form-heading form-heading--stacked">
               <div>
-                <p className="eyebrow">Подтверждение email</p>
-                <h1>Проверьте почту.</h1>
+                <p className="eyebrow">{t('verify.title')}</p>
+                <h1>{t('verify.checkEmail')}</h1>
                 <p>
-                  Введите 43-символьный код из письма
-                  {locationState?.email ? `, отправленного на ${locationState.email}` : ''}.
+                  {locationState?.email ? t('verify.codeForEmail', { email: locationState.email }) : t('verify.code')}
                 </p>
               </div>
             </div>
@@ -61,7 +62,7 @@ export function VerifyEmailPage() {
 
             <form onSubmit={handleSubmit}>
               <label className="field">
-                <span>Код подтверждения</span>
+                <span>{t('verify.codeLabel')}</span>
                 <input
                   name="token"
                   value={token}
@@ -74,11 +75,11 @@ export function VerifyEmailPage() {
                 />
               </label>
               <button className="button button--full" type="submit" disabled={submitting}>
-                {submitting ? 'Проверяем…' : 'Подтвердить email'}
+                {submitting ? t('verify.checking') : t('verify.confirm')}
               </button>
             </form>
             <p className="form-footnote">
-              Уже подтвердили? <Link to="/login">Войти</Link>
+              {t('verify.already')} <Link to="/login">{t('common.login')}</Link>
             </p>
           </>
         )}
