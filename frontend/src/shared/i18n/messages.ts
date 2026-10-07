@@ -312,6 +312,8 @@ const ru = {
   'accept.createAccount': 'Создать аккаунт', 'accept.emailVerified': 'Email уже подтверждён приглашением.',
   'accept.creating': 'Создаём аккаунт…', 'accept.createAndAccept': 'Создать аккаунт и принять',
   'accept.hasAccount': 'Уже есть аккаунт?', 'accept.signInAccept': 'Войти и принять',
+  'app.loadingProfile': 'Загружаем ваш профиль…', 'app.checkingAccess': 'Проверяем права доступа…',
+  'app.openingAcademy': 'Открываем академию…',
 } as const
 
 type MessageKey = keyof typeof ru
@@ -629,6 +631,8 @@ const kk: Messages = {
   'accept.createAccount': 'Аккаунт жасау', 'accept.emailVerified': 'Email шақыру арқылы расталған.',
   'accept.creating': 'Аккаунт жасалуда…', 'accept.createAndAccept': 'Аккаунт жасап, қабылдау',
   'accept.hasAccount': 'Аккаунтыңыз бар ма?', 'accept.signInAccept': 'Кіріп, қабылдау',
+  'app.loadingProfile': 'Профиліңіз жүктелуде…', 'app.checkingAccess': 'Қолжетімділік құқықтары тексерілуде…',
+  'app.openingAcademy': 'Академия ашылуда…',
 }
 
 const en: Messages = {
@@ -943,6 +947,8 @@ const en: Messages = {
   'accept.createAccount': 'Create account', 'accept.emailVerified': 'Email is already verified by the invitation.',
   'accept.creating': 'Creating account…', 'accept.createAndAccept': 'Create account and accept',
   'accept.hasAccount': 'Already have an account?', 'accept.signInAccept': 'Sign in and accept',
+  'app.loadingProfile': 'Loading your profile…', 'app.checkingAccess': 'Checking access rights…',
+  'app.openingAcademy': 'Opening academy…',
 }
 
 export const messages: Record<Locale, Messages> = { kk, ru, en }

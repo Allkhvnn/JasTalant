@@ -1,39 +1,43 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from '../features/auth/model/AuthProvider'
 import { AcademyProvider } from '../entities/academy/model/AcademyProvider'
 import { useAcademy } from '../entities/academy/model/useAcademy'
 import { useAuth } from '../features/auth/model/useAuth'
-import { ApplicationPage } from '../pages/application/ApplicationPage'
-import { DashboardPage } from '../pages/dashboard/DashboardPage'
-import { HomePage } from '../pages/home/HomePage'
-import { LoginPage } from '../pages/login/LoginPage'
-import { NotFoundPage } from '../pages/not-found/NotFoundPage'
-import { PlatformApplicationsPage } from '../pages/platform-applications/PlatformApplicationsPage'
-import { PlatformAcademiesPage } from '../pages/platform-academies/PlatformAcademiesPage'
-import { PlatformAcademyPage } from '../pages/platform-academy/PlatformAcademyPage'
-import { RegisterPage } from '../pages/register/RegisterPage'
-import { VerifyEmailPage } from '../pages/verify-email/VerifyEmailPage'
 import { AppLayout } from './layout/AppLayout'
 import { AcademyLayout } from './layout/AcademyLayout'
-import { AcademyOverviewPage } from '../pages/academy-overview/AcademyOverviewPage'
-import { GroupsPage } from '../pages/groups/GroupsPage'
-import { PlayersPage } from '../pages/players/PlayersPage'
-import { PlayerProfilePage } from '../pages/player-profile/PlayerProfilePage'
-import { InvitationsPage } from '../pages/invitations/InvitationsPage'
-import { AcceptInvitationPage } from '../pages/accept-invitation/AcceptInvitationPage'
-import { AttendancePage } from '../pages/attendance/AttendancePage'
-import { ParentPage } from '../pages/parent/ParentPage'
-import { DevelopmentPage } from '../pages/development/DevelopmentPage'
-import { SchedulePage } from '../pages/schedule/SchedulePage'
-import { MembersPage } from '../pages/members/MembersPage'
-import { ForgotPasswordPage } from '../pages/forgot-password/ForgotPasswordPage'
-import { ResetPasswordPage } from '../pages/reset-password/ResetPasswordPage'
+import { useI18n } from '../shared/i18n/useI18n'
+
+const HomePage = lazy(() => import('../pages/home/HomePage').then((module) => ({ default: module.HomePage })))
+const LoginPage = lazy(() => import('../pages/login/LoginPage').then((module) => ({ default: module.LoginPage })))
+const ForgotPasswordPage = lazy(() => import('../pages/forgot-password/ForgotPasswordPage').then((module) => ({ default: module.ForgotPasswordPage })))
+const ResetPasswordPage = lazy(() => import('../pages/reset-password/ResetPasswordPage').then((module) => ({ default: module.ResetPasswordPage })))
+const RegisterPage = lazy(() => import('../pages/register/RegisterPage').then((module) => ({ default: module.RegisterPage })))
+const VerifyEmailPage = lazy(() => import('../pages/verify-email/VerifyEmailPage').then((module) => ({ default: module.VerifyEmailPage })))
+const AcceptInvitationPage = lazy(() => import('../pages/accept-invitation/AcceptInvitationPage').then((module) => ({ default: module.AcceptInvitationPage })))
+const ApplicationPage = lazy(() => import('../pages/application/ApplicationPage').then((module) => ({ default: module.ApplicationPage })))
+const DashboardPage = lazy(() => import('../pages/dashboard/DashboardPage').then((module) => ({ default: module.DashboardPage })))
+const ParentPage = lazy(() => import('../pages/parent/ParentPage').then((module) => ({ default: module.ParentPage })))
+const PlatformApplicationsPage = lazy(() => import('../pages/platform-applications/PlatformApplicationsPage').then((module) => ({ default: module.PlatformApplicationsPage })))
+const PlatformAcademiesPage = lazy(() => import('../pages/platform-academies/PlatformAcademiesPage').then((module) => ({ default: module.PlatformAcademiesPage })))
+const PlatformAcademyPage = lazy(() => import('../pages/platform-academy/PlatformAcademyPage').then((module) => ({ default: module.PlatformAcademyPage })))
+const AcademyOverviewPage = lazy(() => import('../pages/academy-overview/AcademyOverviewPage').then((module) => ({ default: module.AcademyOverviewPage })))
+const GroupsPage = lazy(() => import('../pages/groups/GroupsPage').then((module) => ({ default: module.GroupsPage })))
+const PlayersPage = lazy(() => import('../pages/players/PlayersPage').then((module) => ({ default: module.PlayersPage })))
+const PlayerProfilePage = lazy(() => import('../pages/player-profile/PlayerProfilePage').then((module) => ({ default: module.PlayerProfilePage })))
+const AttendancePage = lazy(() => import('../pages/attendance/AttendancePage').then((module) => ({ default: module.AttendancePage })))
+const SchedulePage = lazy(() => import('../pages/schedule/SchedulePage').then((module) => ({ default: module.SchedulePage })))
+const DevelopmentPage = lazy(() => import('../pages/development/DevelopmentPage').then((module) => ({ default: module.DevelopmentPage })))
+const MembersPage = lazy(() => import('../pages/members/MembersPage').then((module) => ({ default: module.MembersPage })))
+const InvitationsPage = lazy(() => import('../pages/invitations/InvitationsPage').then((module) => ({ default: module.InvitationsPage })))
+const NotFoundPage = lazy(() => import('../pages/not-found/NotFoundPage').then((module) => ({ default: module.NotFoundPage })))
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, loading } = useAuth()
+  const { t } = useI18n()
 
   if (loading) {
-    return <div className="page-loader">Загружаем ваш профиль…</div>
+    return <div className="page-loader">{t('app.loadingProfile')}</div>
   }
 
   if (!isAuthenticated) {
@@ -45,9 +49,10 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function SuperAdminRoute({ children }: { children: React.ReactNode }) {
   const { account, isAuthenticated, loading } = useAuth()
+  const { t } = useI18n()
 
   if (loading) {
-    return <div className="page-loader">Проверяем права доступа…</div>
+    return <div className="page-loader">{t('app.checkingAccess')}</div>
   }
 
   if (!isAuthenticated) {
@@ -71,16 +76,18 @@ function AcademyAdminRoute({ children }: { children: React.ReactNode }) {
 
 function AcademyEntryRoute() {
   const { academies, loading } = useAuth()
-  if (loading) return <div className="page-loader">Открываем академию…</div>
+  const { t } = useI18n()
+  if (loading) return <div className="page-loader">{t('app.openingAcademy')}</div>
   const academy = academies.find((item) => item.roles.includes('ADMIN') || item.roles.includes('COACH'))
   return academy ? <Navigate to={`/academy/${academy.academyId}`} replace /> : <Navigate to="/dashboard" replace />
 }
 
 function App() {
+  const { t } = useI18n()
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Routes>
+        <Suspense fallback={<div className="page-loader">{t('common.loading')}</div>}><Routes>
           <Route element={<AppLayout />}>
             <Route index element={<HomePage />} />
             <Route path="login" element={<LoginPage />} />
@@ -149,7 +156,7 @@ function App() {
             </Route>
             <Route path="*" element={<NotFoundPage />} />
           </Route>
-        </Routes>
+        </Routes></Suspense>
       </AuthProvider>
     </BrowserRouter>
   )
