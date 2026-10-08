@@ -1,5 +1,7 @@
 package kz.jastalant.backend.auth.service;
 
+import kz.jastalant.backend.common.mail.MailLanguage;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -15,12 +17,12 @@ public class VerificationMailer {
     }
 
     public void send(String email, String token) {
+        var language = MailLanguage.current();
         var message = new SimpleMailMessage();
         message.setFrom(from);
         message.setTo(email);
-        message.setSubject("JasTalant — подтверждение email");
-        message.setText("Код подтверждения email в JasTalant (действует 24 часа):\n\n" + token
-                + "\n\nЕсли вы не регистрировались, проигнорируйте письмо.");
+        message.setSubject(language.text("verification.subject"));
+        message.setText(language.text("verification.body", token));
         mail.send(message);
     }
 }

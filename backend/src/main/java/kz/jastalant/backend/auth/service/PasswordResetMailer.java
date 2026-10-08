@@ -1,5 +1,7 @@
 package kz.jastalant.backend.auth.service;
 
+import kz.jastalant.backend.common.mail.MailLanguage;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -16,14 +18,14 @@ public class PasswordResetMailer {
         this.mail = mail; this.from = from; this.frontendUrl = frontendUrl;
     }
     public void send(String email, String token) {
+        var language = MailLanguage.current();
         String link = UriComponentsBuilder.fromUriString(frontendUrl).path("/reset-password")
-                .queryParam("token", token).build().toUriString();
+                .queryParam("token", token).queryParam("lang", language.tag()).build().toUriString();
         var message = new SimpleMailMessage();
         message.setFrom(from);
         message.setTo(email);
-        message.setSubject("JasTalant — восстановление пароля");
-        message.setText("Чтобы задать новый пароль JasTalant, откройте ссылку в течение часа:\n\n" + link
-                + "\n\nЕсли вы не запрашивали восстановление, проигнорируйте письмо.");
+        message.setSubject(language.text("reset.subject"));
+        message.setText(language.text("reset.body", link));
         mail.send(message);
     }
 }

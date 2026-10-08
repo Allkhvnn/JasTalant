@@ -48,6 +48,9 @@ jobs:
       - name: Build
         working-directory: frontend
         run: npm run build
+      - name: Test localization
+        working-directory: frontend
+        run: npm test
 
   containers:
     name: Build ${{ matrix.service }} image

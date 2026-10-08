@@ -74,6 +74,19 @@ class OnboardingTests {
     }
 
     @Test
+    void registrationUsesLanguageFromRequestHeader() throws Exception {
+        mvc.perform(post("/api/auth/register").header("Accept-Language", "kk-KZ")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"academyName\":\"Test Academy\",\"fullName\":\"Test Admin\","
+                                + "\"email\":\"localized@example.kz\",\"password\":\"" + PASSWORD + "\"}"))
+                .andExpect(status().isCreated());
+        var captor = ArgumentCaptor.forClass(SimpleMailMessage.class);
+        verify(mail).send(captor.capture());
+        assertThat(captor.getValue().getSubject()).isEqualTo("JasTalant — email растау");
+        assertThat(captor.getValue().getText()).contains("24 сағат", "Тіркелмеген");
+    }
+
+    @Test
     void refreshTokenRotatesAndLogoutRevokesSession() throws Exception {
         register("session@example.kz");
         var loginResult = mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
@@ -118,7 +131,8 @@ class OnboardingTests {
         var captor = ArgumentCaptor.forClass(SimpleMailMessage.class);
         verify(mail).send(captor.capture());
         String resetLink = captor.getValue().getText().split("\\n\\n")[1];
-        String resetToken = resetLink.substring(resetLink.indexOf("token=") + 6);
+        String resetToken = org.springframework.web.util.UriComponentsBuilder.fromUriString(resetLink)
+                .build().getQueryParams().getFirst("token");
         assertThat(jdbc.queryForObject("select token_hash from password_reset_tokens", String.class))
                 .hasSize(64).isNotEqualTo(resetToken);
 

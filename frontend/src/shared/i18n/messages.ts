@@ -1,6 +1,7 @@
 import type { Locale } from './I18nContext'
 
 const ru = {
+  'site.description': 'JasTalant — CRM для футбольных академий Казахстана',
   'common.dashboard': 'Кабинет', 'common.login': 'Войти', 'common.logout': 'Выйти',
   'common.connect': 'Подключить академию', 'common.profile': 'Профиль', 'common.applications': 'Заявки', 'common.academies': 'Академии',
   'common.crm': 'CRM', 'common.children': 'Дети', 'common.application': 'Заявка',
@@ -321,6 +322,7 @@ type MessageKey = keyof typeof ru
 type Messages = Record<MessageKey, string>
 
 const kk: Messages = {
+  'site.description': 'JasTalant — Қазақстан футбол академияларына арналған CRM',
   'common.dashboard': 'Кабинет', 'common.login': 'Кіру', 'common.logout': 'Шығу',
   'common.connect': 'Академияны қосу', 'common.profile': 'Профиль', 'common.applications': 'Өтінімдер', 'common.academies': 'Академиялар',
   'common.crm': 'CRM', 'common.children': 'Балалар', 'common.application': 'Өтінім',
@@ -638,6 +640,7 @@ const kk: Messages = {
 }
 
 const en: Messages = {
+  'site.description': 'JasTalant — CRM for football academies in Kazakhstan',
   'common.dashboard': 'Dashboard', 'common.login': 'Sign in', 'common.logout': 'Sign out',
   'common.connect': 'Connect academy', 'common.profile': 'Profile', 'common.applications': 'Applications', 'common.academies': 'Academies',
   'common.crm': 'CRM', 'common.children': 'Children', 'common.application': 'Application',

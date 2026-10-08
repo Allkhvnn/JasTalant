@@ -310,7 +310,9 @@ class InvitationTests {
         var captor = ArgumentCaptor.forClass(SimpleMailMessage.class);
         verify(mail, atLeastOnce()).send(captor.capture());
         String text = captor.getValue().getText();
-        return text.substring(text.indexOf("token=") + 6).split("\\s")[0];
+        String link = text.substring(text.indexOf("http")).split("\\s")[0];
+        return org.springframework.web.util.UriComponentsBuilder.fromUriString(link)
+                .build().getQueryParams().getFirst("token");
     }
 
     private String inviteJson(String email, String role, UUID playerId) {

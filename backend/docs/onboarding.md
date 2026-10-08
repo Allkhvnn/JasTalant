@@ -1,5 +1,7 @@
 # Подключение академий
 
+Выбор языка писем и проверки RU/KZ/EN описаны в [localization.md](localization.md).
+
 ## Настройка
 
 Нужны Java 21, PostgreSQL, обязательный `JWT_SECRET_BASE64` (минимум 32 случайных
