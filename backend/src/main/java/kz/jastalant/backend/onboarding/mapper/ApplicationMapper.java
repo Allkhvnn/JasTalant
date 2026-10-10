@@ -10,6 +10,6 @@ public final class ApplicationMapper {
         return new ApplicationView(application.getId(), application.getApplicant().getId(),
                 application.getApplicant().getFullName(), application.getApplicant().getEmail(),
                 application.getAcademyName(), application.getStatus(), application.getAcademyId(),
-                application.getRejectionReason(), application.getCreatedAt(), application.getReviewedAt());
+                application.getRejectionReason(), application.getCreatedAt(), application.getReviewedAt(), application.getSubmittedAt());
     }
 }

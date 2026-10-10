@@ -30,10 +30,29 @@ public class AcademyApplication {
     private Instant createdAt = Instant.now();
     private Instant reviewedAt;
     private UUID reviewedBy;
+    @Column(nullable = false, length = 2)
+    private String mailLanguage = "ru";
+    @Column(nullable = false)
+    private Instant submittedAt = createdAt;
 
     public AcademyApplication(User applicant, String academyName) {
         this.applicant = applicant;
         this.academyName = academyName.strip();
+    }
+
+    public void setMailLanguage(String language) {
+        this.mailLanguage = language;
+    }
+
+    public void resubmit(String academyName, String language, Instant now) {
+        if (status != ApplicationStatus.REJECTED) throw new IllegalStateException("Application is not rejected");
+        this.academyName = academyName.strip();
+        this.mailLanguage = language;
+        this.status = ApplicationStatus.PENDING;
+        this.rejectionReason = null;
+        this.reviewedAt = null;
+        this.reviewedBy = null;
+        this.submittedAt = now;
     }
 
     public void emailConfirmed() {

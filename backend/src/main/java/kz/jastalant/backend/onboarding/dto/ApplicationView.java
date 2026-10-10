@@ -7,4 +7,4 @@ import java.util.UUID;
 
 public record ApplicationView(UUID id, UUID applicantId, String applicantName, String applicantEmail,
                               String academyName, ApplicationStatus status, UUID academyId,
-                              String rejectionReason, Instant createdAt, Instant reviewedAt) {}
+                              String rejectionReason, Instant createdAt, Instant reviewedAt, Instant submittedAt) {}

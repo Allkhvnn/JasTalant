@@ -7,6 +7,7 @@ import kz.jastalant.backend.onboarding.service.ApplicationService;
 import jakarta.validation.Valid;
 import kz.jastalant.backend.onboarding.dto.ApplicationPage;
 import kz.jastalant.backend.onboarding.dto.RejectionRequest;
+import kz.jastalant.backend.onboarding.dto.ResubmitApplicationRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -21,6 +22,12 @@ public class ApplicationController {
     @GetMapping("/api/applications/mine")
     public ApplicationView mine(@AuthenticationPrincipal Jwt jwt) {
         return applications.mine(UUID.fromString(jwt.getSubject()));
+    }
+
+    @PostMapping("/api/applications/mine/resubmit")
+    public ApplicationView resubmit(@AuthenticationPrincipal Jwt jwt,
+            @Valid @RequestBody ResubmitApplicationRequest request) {
+        return applications.resubmit(UUID.fromString(jwt.getSubject()), request.academyName());
     }
 
     @GetMapping("/api/platform/applications")

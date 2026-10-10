@@ -33,7 +33,8 @@ public class SecurityConfiguration {
                                 "/api/invitations/preview", "/api/invitations/accept-new").permitAll()
                         .requestMatchers("/api/platform/**").hasRole("SUPER_ADMIN")
                         .requestMatchers("/api/academies/**", "/api/invitations/accept").authenticated()
-                        .requestMatchers("/api/auth/me", "/api/auth/academies", "/api/auth/resend-verification", "/api/applications/mine").authenticated()
+                        .requestMatchers("/api/auth/me", "/api/auth/academies", "/api/auth/resend-verification", "/api/applications/mine",
+                                "/api/applications/mine/resubmit").authenticated()
                         .anyRequest().denyAll())
                 .oauth2ResourceServer(oauth -> oauth.jwt(jwt -> jwt.jwtAuthenticationConverter(token -> {
                     var user = users.findById(UUID.fromString(token.getSubject()))

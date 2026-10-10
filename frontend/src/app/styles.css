@@ -718,6 +718,10 @@ h1 span {
   border-color: rgba(255, 122, 122, 0.26);
 }
 
+.application-resubmit {
+  margin-top: 20px;
+}
+
 .application-action h2 {
   margin-bottom: 7px;
   font-size: 18px;

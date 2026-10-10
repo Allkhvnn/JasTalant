@@ -213,7 +213,7 @@ export function PlatformApplicationsPage() {
                     </span>
                     <h2>{application.academyName}</h2>
                   </div>
-                  <time dateTime={application.createdAt}>{dateFormatter.format(new Date(application.createdAt))}</time>
+                  <time dateTime={application.submittedAt}>{dateFormatter.format(new Date(application.submittedAt))}</time>
                 </div>
 
                 <dl className="review-card__details">

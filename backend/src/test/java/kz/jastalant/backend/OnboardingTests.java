@@ -2,6 +2,7 @@ package kz.jastalant.backend;
 
 import kz.jastalant.backend.academy.entity.Academy;
 import kz.jastalant.backend.onboarding.service.ApplicationService;
+import kz.jastalant.backend.onboarding.service.ApplicationMailDeliveryService;
 import kz.jastalant.backend.user.entity.PlatformRole;
 import kz.jastalant.backend.user.entity.User;
 import kz.jastalant.backend.user.repository.UserRepository;
@@ -9,6 +10,8 @@ import kz.jastalant.backend.user.repository.UserRepository;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -58,6 +61,7 @@ class OnboardingTests {
     @Autowired UserRepository users;
     @Autowired PasswordEncoder passwords;
     @Autowired ApplicationService applications;
+    @Autowired ApplicationMailDeliveryService delivery;
     @Autowired JwtEncoder jwtEncoder;
     @MockitoBean JavaMailSender mail;
     static final String PASSWORD = "A-long-test-password-42";
@@ -279,6 +283,205 @@ class OnboardingTests {
     }
 
     @Test
+    void rejectedApplicantCanCorrectResubmitAndBeApprovedWithoutAnotherAccount() throws Exception {
+        String id = register("retry@example.kz");
+        verifyEmail(verificationCode(), 204);
+        String owner = ownerToken();
+        String applicant = login("retry@example.kz");
+        mvc.perform(post("/api/platform/applications/" + id + "/reject").header("Authorization", bearer(owner))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"reason\":\"Clarify academy name\"}"))
+                .andExpect(status().isOk());
+        Instant originalCreated = jdbc.queryForObject("select created_at from academy_applications", java.sql.Timestamp.class).toInstant();
+        mvc.perform(post("/api/applications/mine/resubmit").header("Authorization", bearer(applicant))
+                        .header("Accept-Language", "en-US").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"academyName\":\" Corrected Academy \"}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.id").value(id))
+                .andExpect(jsonPath("$.academyName").value("Corrected Academy"))
+                .andExpect(jsonPath("$.status").value("PENDING"))
+                .andExpect(jsonPath("$.rejectionReason").isEmpty()).andExpect(jsonPath("$.reviewedAt").isEmpty());
+        assertThat(jdbc.queryForObject("select created_at from academy_applications", java.sql.Timestamp.class).toInstant())
+                .isEqualTo(originalCreated);
+        assertThat(jdbc.queryForObject("select submitted_at from academy_applications", java.sql.Timestamp.class).toInstant())
+                .isAfter(originalCreated);
+        mvc.perform(get("/api/platform/applications").header("Authorization", bearer(owner)))
+                .andExpect(jsonPath("$.totalElements").value(1)).andExpect(jsonPath("$.items[0].academyName").value("Corrected Academy"));
+        mvc.perform(post("/api/platform/applications/" + id + "/approve").header("Authorization", bearer(owner)))
+                .andExpect(status().isOk());
+        assertThat(jdbc.queryForObject("select name from academies", String.class)).isEqualTo("Corrected Academy");
+        assertThat(jdbc.queryForObject("select count(*) from academy_memberships", Integer.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("select count(*) from academy_applications", Integer.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("select count(*) from application_decision_mail", Integer.class)).isEqualTo(2);
+        reset(mail);
+        assertThat(delivery.deliverNext()).isTrue();
+        assertThat(delivery.deliverNext()).isTrue();
+        assertThat(delivery.deliverNext()).isFalse();
+        var captor = ArgumentCaptor.forClass(SimpleMailMessage.class);
+        verify(mail, times(2)).send(captor.capture());
+        var sent = captor.getAllValues();
+        assertThat(sent.get(0).getText()).contains("Test Academy", "Clarify academy name", "lang=ru");
+        assertThat(sent.get(1).getText()).contains("Corrected Academy", "lang=en");
+        assertThat(sent.get(1).getSubject()).isEqualTo("JasTalant — academy application approved");
+    }
+
+    @Test
+    void resubmissionRequiresOwnRejectedVerifiedApplicationAndValidName() throws Exception {
+        String id = register("guard@example.kz");
+        String applicant = login("guard@example.kz");
+        mvc.perform(post("/api/applications/mine/resubmit").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"academyName\":\"New\"}"))
+                .andExpect(status().isUnauthorized());
+        resubmit(applicant, "{\"academyName\":\"New\"}", 409);
+        verifyEmail(verificationCode(), 204);
+        resubmit(applicant, "{\"academyName\":\"New\"}", 409);
+        String owner = ownerToken();
+        mvc.perform(post("/api/platform/applications/" + id + "/reject").header("Authorization", bearer(owner))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"reason\":\"Correction needed\"}"))
+                .andExpect(status().isOk());
+        resubmit(applicant, "{}", 400);
+        resubmit(applicant, "{\"academyName\":\"   \"}", 400);
+        resubmit(applicant, "{\"academyName\":\"" + "a".repeat(201) + "\"}", 400);
+        resubmit(owner, "{\"academyName\":\"Hijack\",\"applicantId\":\"" + id + "\"}", 404);
+        String other = register("other@example.kz");
+        verifyEmail(verificationCode(), 204);
+        resubmit(login("other@example.kz"), "{\"academyName\":\"Hijack\",\"id\":\"" + id + "\"}", 409);
+        assertThat(jdbc.queryForObject("select status from academy_applications where id = ?", String.class, UUID.fromString(id)))
+                .isEqualTo("REJECTED");
+        assertThat(jdbc.queryForObject("select status from academy_applications where id = ?", String.class, UUID.fromString(other)))
+                .isEqualTo("PENDING");
+        resubmit(applicant, "{\"academyName\":\"Fixed\"}", 200);
+        resubmit(applicant, "{\"academyName\":\"Second duplicate\"}", 409);
+        mvc.perform(post("/api/platform/applications/" + id + "/approve").header("Authorization", bearer(owner)))
+                .andExpect(status().isOk());
+        resubmit(applicant, "{\"academyName\":\"Another academy\"}", 409);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"ru-RU,ru,заявка академии одобрена,заявка академии отклонена",
+            "kk-KZ,kk,академия өтінімі мақұлданды,академия өтінімі қабылданбады",
+            "en-US,en,academy application approved,academy application rejected"})
+    void decisionMessagesUseApplicantLanguageRatherThanReviewers(String header, String language,
+            String approvalSubject, String rejectionSubject) throws Exception {
+        String response = mvc.perform(post("/api/auth/register").header("Accept-Language", header)
+                        .contentType(MediaType.APPLICATION_JSON).content(registrationJson("language@example.kz")))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        String id = JsonPath.read(response, "$.id");
+        verifyEmail(verificationCode(), 204);
+        String owner = ownerToken();
+        reset(mail);
+        mvc.perform(post("/api/platform/applications/" + id + "/reject").header("Authorization", bearer(owner))
+                        .header("Accept-Language", "de-DE").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"reason\":\"Уточните название %s\"}"))
+                .andExpect(status().isOk());
+        verifyNoInteractions(mail);
+        assertThat(delivery.deliverNext()).isTrue();
+        var captor = ArgumentCaptor.forClass(SimpleMailMessage.class);
+        verify(mail).send(captor.capture());
+        assertThat(captor.getValue().getSubject()).isEqualTo("JasTalant — " + rejectionSubject);
+        assertThat(captor.getValue().getText()).contains("Уточните название %s", "/application?lang=" + language);
+        assertThat(captor.getValue().getTo()).containsExactly("language@example.kz");
+        mvc.perform(post("/api/applications/mine/resubmit").header("Authorization", bearer(login("language@example.kz")))
+                        .header("Accept-Language", header).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"academyName\":\"Academy %s\"}"))
+                .andExpect(status().isOk());
+        reset(mail);
+        mvc.perform(post("/api/platform/applications/" + id + "/approve").header("Authorization", bearer(owner))
+                        .header("Accept-Language", "de-DE"))
+                .andExpect(status().isOk());
+        assertThat(delivery.deliverNext()).isTrue();
+        verify(mail).send(captor.capture());
+        assertThat(captor.getValue().getSubject()).isEqualTo("JasTalant — " + approvalSubject);
+        assertThat(captor.getValue().getText()).contains("Academy %s", "/application?lang=" + language);
+    }
+
+    @Test
+    void smtpFailureKeepsDecisionAndRetriesQueuedMessage() throws Exception {
+        String id = register("queue@example.kz");
+        verifyEmail(verificationCode(), 204);
+        String owner = ownerToken();
+        reset(mail);
+        doThrow(new MailSendException("Unavailable")).when(mail).send(any(SimpleMailMessage.class));
+        mvc.perform(post("/api/platform/applications/" + id + "/approve").header("Authorization", bearer(owner)))
+                .andExpect(status().isOk());
+        assertThat(delivery.deliverNext()).isTrue();
+        assertThat(delivery.deliverNext()).isFalse();
+        assertThat(jdbc.queryForObject("select status from academy_applications", String.class)).isEqualTo("APPROVED");
+        assertThat(jdbc.queryForObject("select count(*) from academies", Integer.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("select attempts from application_decision_mail", Integer.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("select count(*) from application_decision_mail where sent_at is null and next_attempt_at > now()", Integer.class))
+                .isEqualTo(1);
+        jdbc.update("update application_decision_mail set next_attempt_at = now() - interval '1 second'");
+        reset(mail);
+        assertThat(delivery.deliverNext()).isTrue();
+        assertThat(delivery.deliverNext()).isFalse();
+        verify(mail, times(1)).send(any(SimpleMailMessage.class));
+        assertThat(jdbc.queryForObject("select attempts from application_decision_mail", Integer.class)).isEqualTo(2);
+        assertThat(jdbc.queryForObject("select count(*) from application_decision_mail where sent_at is not null", Integer.class))
+                .isEqualTo(1);
+    }
+
+    @Test
+    void concurrentResubmissionsSubmitOnlyOnce() throws Exception {
+        UUID id = UUID.fromString(register("resubmit-race@example.kz"));
+        verifyEmail(verificationCode(), 204);
+        ownerToken();
+        var owner = users.findByEmail("owner@example.kz").orElseThrow().getId();
+        var applicant = users.findByEmail("resubmit-race@example.kz").orElseThrow().getId();
+        applications.reject(owner, id, "Fix name");
+        CountDownLatch start = new CountDownLatch(1);
+        Callable<Integer> submit = () -> {
+            start.await(10, TimeUnit.SECONDS);
+            try { applications.resubmit(applicant, "Fixed"); return 200; }
+            catch (BusinessException failure) {
+                if (failure.getCode() == ErrorCode.CONFLICT) return 409;
+                throw failure;
+            }
+        };
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            var first = executor.submit(submit);
+            var second = executor.submit(submit);
+            start.countDown();
+            assertThat(List.of(first.get(20, TimeUnit.SECONDS), second.get(20, TimeUnit.SECONDS)))
+                    .containsExactlyInAnyOrder(200, 409);
+        }
+        assertThat(jdbc.queryForObject("select count(*) from academy_applications", Integer.class)).isEqualTo(1);
+    }
+
+    @Test
+    void concurrentDeliveryWorkersDoNotSendSameMessage() throws Exception {
+        String id = register("worker@example.kz");
+        verifyEmail(verificationCode(), 204);
+        String owner = ownerToken();
+        mvc.perform(post("/api/platform/applications/" + id + "/approve").header("Authorization", bearer(owner)))
+                .andExpect(status().isOk());
+        reset(mail);
+        CountDownLatch entered = new CountDownLatch(1);
+        CountDownLatch finish = new CountDownLatch(1);
+        doAnswer(invocation -> {
+            entered.countDown();
+            assertThat(finish.await(10, TimeUnit.SECONDS)).isTrue();
+            return null;
+        }).when(mail).send(any(SimpleMailMessage.class));
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            var first = executor.submit(() -> delivery.deliverNext());
+            try {
+                assertThat(entered.await(10, TimeUnit.SECONDS)).isTrue();
+                var second = executor.submit(() -> delivery.deliverNext());
+                assertThat(second.get(5, TimeUnit.SECONDS)).isFalse();
+            } finally {
+                finish.countDown();
+            }
+            assertThat(first.get(10, TimeUnit.SECONDS)).isTrue();
+        }
+        verify(mail, times(1)).send(any(SimpleMailMessage.class));
+    }
+
+    private void resubmit(String token, String json, int expectedStatus) throws Exception {
+        mvc.perform(post("/api/applications/mine/resubmit").header("Authorization", bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON).content(json))
+                .andExpect(status().is(expectedStatus));
+    }
+
+    @Test
     void expiredCodeAndResendInvalidateOldCode() throws Exception {
         register("resend@example.kz");
         String oldCode = verificationCode();
@@ -389,6 +592,7 @@ class OnboardingTests {
             mvc.perform(post("/api/platform/applications/" + id + "/approve").header("Authorization", bearer(owner)))
                     .andExpect(status().isConflict());
             assertThat(jdbc.queryForObject("select count(*) from academies", Integer.class)).isZero();
+            assertThat(jdbc.queryForObject("select count(*) from application_decision_mail", Integer.class)).isZero();
             assertThat(jdbc.queryForObject("select status from academy_applications where id = ?", String.class, UUID.fromString(id)))
                     .isEqualTo("PENDING");
         } finally {

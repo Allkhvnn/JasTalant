@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
+import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { getMyApplication } from '../../entities/application/api/applicationApi'
+import { getMyApplication, resubmitMyApplication } from '../../entities/application/api/applicationApi'
 import type { AcademyApplication, ApplicationStatus } from '../../entities/application/model/types'
 import { resendVerification } from '../../features/auth/api/authApi'
 import { useAuth } from '../../features/auth/model/useAuth'
@@ -19,6 +20,7 @@ export function ApplicationPage() {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [resending, setResending] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
 
   const loadApplication = useCallback(async () => {
     if (!token) return
@@ -34,6 +36,27 @@ export function ApplicationPage() {
       setLoading(false)
     }
   }, [t, token])
+
+  const handleResubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!token || submitting) return
+    const academyName = String(new FormData(event.currentTarget).get('academyName') ?? '').trim()
+    setError('')
+    setNotice('')
+    if (!academyName) {
+      setError(t('myApplication.nameRequired'))
+      return
+    }
+    setSubmitting(true)
+    try {
+      setApplication(await resubmitMyApplication(token, academyName))
+      setNotice(t('myApplication.resubmitted'))
+    } catch (requestError) {
+      setError(errorMessage(requestError))
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   useEffect(() => {
     // oxlint-disable-next-line react/set-state-in-effect -- route data is loaded from the API on mount
@@ -80,6 +103,9 @@ export function ApplicationPage() {
         <p className="eyebrow">{t('myApplication.connecting')}</p>
         <h1>{application.academyName}</h1>
         <p>{t('myApplication.createdAt', { date: new Intl.DateTimeFormat(intlLocale, { dateStyle: 'long' }).format(new Date(application.createdAt)) })}</p>
+        {application.submittedAt !== application.createdAt && (
+          <p>{t('myApplication.lastSubmitted', { date: new Intl.DateTimeFormat(intlLocale, { dateStyle: 'long', timeStyle: 'short' }).format(new Date(application.submittedAt)) })}</p>
+        )}
       </div>
 
       {error && <div className="alert alert--error" role="alert">{error}</div>}
@@ -139,12 +165,30 @@ export function ApplicationPage() {
       )}
 
       {application.status === 'REJECTED' && (
-        <div className="application-action application-action--danger">
-          <div>
-            <h2>{t('applications.rejectionReason')}</h2>
-            <p>{application.rejectionReason || t('myApplication.noReason')}</p>
+        <>
+          <div className="application-action application-action--danger">
+            <div>
+              <h2>{t('applications.rejectionReason')}</h2>
+              <p>{application.rejectionReason || t('myApplication.noReason')}</p>
+            </div>
           </div>
-        </div>
+          <form className="auth-card application-resubmit" onSubmit={handleResubmit}>
+            <div className="form-heading">
+              <div>
+                <h2>{t('myApplication.correctTitle')}</h2>
+                <p>{t('myApplication.correctText')}</p>
+              </div>
+            </div>
+            <label className="field">
+              <span>{t('platform.academyName')}</span>
+              <input name="academyName" autoComplete="organization" maxLength={200}
+                defaultValue={application.academyName} required disabled={submitting} />
+            </label>
+            <button className="button" type="submit" disabled={submitting}>
+              {submitting ? t('auth.sending') : t('myApplication.submitAgain')}
+            </button>
+          </form>
+        </>
       )}
     </section>
   )

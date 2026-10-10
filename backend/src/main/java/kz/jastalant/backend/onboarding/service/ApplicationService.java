@@ -2,6 +2,7 @@ package kz.jastalant.backend.onboarding.service;
 
 import kz.jastalant.backend.academy.entity.Academy;
 import kz.jastalant.backend.academy.repository.AcademyRepository;
+import kz.jastalant.backend.common.mail.MailLanguage;
 import kz.jastalant.backend.membership.entity.AcademyMembership;
 import kz.jastalant.backend.membership.entity.AcademyRole;
 import kz.jastalant.backend.membership.repository.AcademyMembershipRepository;
@@ -11,7 +12,6 @@ import kz.jastalant.backend.onboarding.entity.AcademyApplication;
 import kz.jastalant.backend.onboarding.entity.ApplicationStatus;
 import kz.jastalant.backend.onboarding.repository.AcademyApplicationRepository;
 import kz.jastalant.backend.user.entity.PlatformRole;
-import kz.jastalant.backend.user.entity.User;
 import kz.jastalant.backend.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -32,6 +32,7 @@ public class ApplicationService {
     private final AcademyMembershipRepository memberships;
     private final UserRepository users;
     private final Clock clock;
+    private final ApplicationDecisionMailer decisionMailer;
 
     @Transactional(readOnly = true)
     public ApplicationView mine(UUID userId) {
@@ -43,7 +44,7 @@ public class ApplicationService {
     public ApplicationPage list(UUID actor, ApplicationStatus status, int page, int size) {
         requireOwner(actor);
         if (page < 0 || size < 1 || size > 100) throw new BusinessException(ErrorCode.INVALID_REQUEST, "Invalid page or size");
-        var result = applications.findAllByStatus(status, PageRequest.of(page, size, Sort.by("createdAt").and(Sort.by("id"))));
+        var result = applications.findAllByStatus(status, PageRequest.of(page, size, Sort.by("submittedAt").and(Sort.by("id"))));
         return new ApplicationPage(result.map(ApplicationMapper::toView).getContent(), page, size, result.getTotalElements());
     }
 
@@ -55,6 +56,7 @@ public class ApplicationService {
         var academy = academies.save(new Academy(application.getAcademyName()));
         memberships.save(new AcademyMembership(academy, application.getApplicant(), AcademyRole.ADMIN));
         application.approve(academy.getId(), actor, clock.instant());
+        decisionMailer.enqueue(application);
         return ApplicationMapper.toView(application);
     }
 
@@ -63,6 +65,21 @@ public class ApplicationService {
         requireOwner(actor);
         var application = pending(id);
         application.reject(reason, actor, clock.instant());
+        decisionMailer.enqueue(application);
+        return ApplicationMapper.toView(application);
+    }
+
+    @Transactional
+    public ApplicationView resubmit(UUID actor, String academyName) {
+        var application = applications.lockByApplicantId(actor)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "Application not found"));
+        if (!application.getApplicant().isEmailVerified()) {
+            throw new BusinessException(ErrorCode.CONFLICT, "Email must be verified");
+        }
+        if (application.getStatus() != ApplicationStatus.REJECTED) {
+            throw new BusinessException(ErrorCode.CONFLICT, "Only rejected applications can be resubmitted");
+        }
+        application.resubmit(academyName, MailLanguage.current().tag(), clock.instant());
         return ApplicationMapper.toView(application);
     }
 

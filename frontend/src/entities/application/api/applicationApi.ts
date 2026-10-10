@@ -9,6 +9,12 @@ export function getMyApplication(token: string) {
   return apiRequest<AcademyApplication>('/api/applications/mine', { token })
 }
 
+export function resubmitMyApplication(token: string, academyName: string) {
+  return apiRequest<AcademyApplication>('/api/applications/mine/resubmit', {
+    method: 'POST', token, body: { academyName },
+  })
+}
+
 export function getApplications(
   token: string,
   status: ApplicationStatus,

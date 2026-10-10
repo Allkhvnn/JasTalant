@@ -11,6 +11,7 @@ export type AcademyApplication = {
   rejectionReason: string | null
   createdAt: string
   reviewedAt: string | null
+  submittedAt: string
 }
 
 export type AcademyApplicationPage = {

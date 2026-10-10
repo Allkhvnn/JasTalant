@@ -3,6 +3,7 @@ package kz.jastalant.backend.auth.service;
 import kz.jastalant.backend.auth.dto.AccountResponse;
 import kz.jastalant.backend.auth.dto.LoginRequest;
 import kz.jastalant.backend.auth.dto.RegisterRequest;
+import kz.jastalant.backend.common.mail.MailLanguage;
 
 import kz.jastalant.backend.onboarding.dto.ApplicationView;
 import kz.jastalant.backend.onboarding.mapper.ApplicationMapper;
@@ -48,6 +49,7 @@ public class AuthService {
         if (users.findByEmail(email).isPresent()) throw new BusinessException(ErrorCode.CONFLICT, "Email is already registered");
         var user = users.save(new User(email, request.fullName(), passwords.encode(request.password())));
         var application = applications.save(new AcademyApplication(user, request.academyName()));
+        application.setMailLanguage(MailLanguage.current().tag());
         sendVerification(user);
         return ApplicationMapper.toView(application);
     }

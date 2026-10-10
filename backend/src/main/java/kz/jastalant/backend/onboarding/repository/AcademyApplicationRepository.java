@@ -19,4 +19,8 @@ public interface AcademyApplicationRepository extends Repository<AcademyApplicat
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select a from AcademyApplication a where a.id = :id")
     Optional<AcademyApplication> lockById(UUID id);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select a from AcademyApplication a where a.applicant.id = :applicantId")
+    Optional<AcademyApplication> lockByApplicantId(UUID applicantId);
 }

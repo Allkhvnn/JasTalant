@@ -8,7 +8,10 @@ import java.util.ResourceBundle;
 /** The request language is resolved by Spring MVC from Accept-Language. */
 public record MailLanguage(String tag, ResourceBundle messages) {
     public static MailLanguage current() {
-        String language = LocaleContextHolder.getLocale().getLanguage();
+        return forTag(LocaleContextHolder.getLocale().getLanguage());
+    }
+
+    public static MailLanguage forTag(String language) {
         String tag = switch (language) {
             case "kk", "en" -> language;
             default -> "ru";
