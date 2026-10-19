@@ -1,4 +1,15 @@
-# Реальная почта через Gmail
+# Почта: локальная разработка, демонстрация и закрытый пилот
+
+| Режим | Профили Spring | Почта |
+|---|---|---|
+| Локальная разработка | `local` | Mailpit, http://localhost:8025 |
+| Демонстрация и закрытый пилот | `local,smtp` | Gmail SMTP, реальные адресаты |
+
+Локальный запуск: `docker compose up -d --wait`, затем
+`.\gradlew.bat bootRun --args='--spring.profiles.active=local'` из папки `backend`.
+Compose запускает БД и Mailpit. Профиль `local` явно использует localhost:1025
+без SMTP-аутентификации, независимо от заполненных Gmail-переменных в `.env`.
+Чтобы переключить режим, остановите backend и запустите его с нужными профилями.
 
 Профиль `smtp` подключает реальный SMTP, без Mailpit. По умолчанию: `smtp.gmail.com`,
 порт `587`, SMTP-аутентификация и обязательный STARTTLS с проверкой имени сервера.
@@ -31,11 +42,11 @@ SMTP_PASSWORD=your-google-app-password
 Если создание пароля приложения недоступно, проверьте ограничения аккаунта,
 двухэтапную аутентификацию и политики организации по инструкции Google.
 
-## Запуск в PowerShell
+## Демонстрация и закрытый пилот: запуск в PowerShell
 
 ```powershell
 cd C:\Users\Sam\Desktop\Backend\backend
-docker compose up -d --wait
+docker compose up -d --wait postgres
 $env:JAVA_HOME = 'C:\Program Files\Eclipse Adoptium\jdk-21.0.9.10-hotspot'
 $env:Path = "$env:JAVA_HOME\bin;$env:Path"
 .\gradlew.bat bootRun --args='--spring.profiles.active=local,smtp'
@@ -46,8 +57,10 @@ $env:Path = "$env:JAVA_HOME\bin;$env:Path"
 отправляет письмо. При ошибке подключения backend не стартует. Наличие успешного
 соединения ещё не доказывает доставку письма адресату.
 
-Mailpit не запускается обычным `docker compose up`. Если он остался от предыдущего
-запуска, его можно остановить без изменения БД: `docker compose stop mailpit`.
+Для демонстрации команда выше запускает только БД; Mailpit не требуется.
+Если он остался от локальной разработки, его можно остановить без изменения БД:
+`docker compose stop mailpit`. Наличие работающего Mailpit не влияет на выбор
+почты: он определяется профилями backend.
 
 Frontend запускается как обычно, в другом терминале:
 

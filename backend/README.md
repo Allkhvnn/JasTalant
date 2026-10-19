@@ -19,19 +19,21 @@ $env:Path = "$env:JAVA_HOME\bin;$env:Path"
 java -version
 
 docker compose up -d --wait
-.\gradlew.bat bootRun --args='--spring.profiles.active=local,smtp'
+.\gradlew.bat bootRun --args='--spring.profiles.active=local'
 ```
 
 Путь JDK замените на свой. Пароль выберите самостоятельно. Приложение слушает
 порт 8080; PostgreSQL доступна только через localhost:5432.
-Перед запуском заполните `SMTP_USERNAME` и `SMTP_PASSWORD` в `backend/.env`.
-Профиль `smtp` использует Gmail с обязательным STARTTLS и проверяет SMTP-соединение
-при старте. Письма уходят реальным адресатам. Настройка Google и инструкция проверки:
-[реальный SMTP](docs/smtp.md).
+Обычный Compose запускает PostgreSQL и Mailpit. Профиль `local` отправляет письма
+только в Mailpit на localhost:1025, даже если в `.env` заполнены данные Gmail.
+Письма доступны на http://localhost:8025 и не уходят внешним адресатам.
 
-Mailpit запускается только явно: `docker compose --profile mailpit up -d --wait`.
-Для него используйте профиль `local` без `smtp` и без SMTP-переопределений в `.env`;
-письма доступны на http://localhost:8025 и не уходят внешним адресатам.
+Для демонстрации и закрытого пилота заполните `SMTP_USERNAME` и `SMTP_PASSWORD`
+в `backend/.env` и запустите backend с `--spring.profiles.active=local,smtp`.
+Профиль `smtp` использует Gmail с STARTTLS и проверяет SMTP-соединение при старте.
+Письма уходят реальным адресатам. При необходимости запустить только БД:
+`docker compose up -d --wait postgres`. Настройка Google и проверка:
+[Gmail для демонстрации и пилота](docs/smtp.md).
 JWT-ключ храните вне репозитория и используйте один и тот же при перезапусках;
 генерация нового ключа делает ранее выданные токены недействительными.
 При конфликте порта задайте одинаковый порт в `DB_PORT` и `DB_URL` файла `.env`.

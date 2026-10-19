@@ -14,6 +14,10 @@ JasTalant — CRM для футбольных академий. Backend и front
 
 Backend запускается на `http://localhost:8080`. Инструкции по базе данных, переменным окружения и тестам находятся в [backend/README.md](backend/README.md).
 
+Для локальной разработки используем Mailpit и профиль `local`. Для демонстрации
+и закрытого пилота — Gmail SMTP и профили `local,smtp`.
+Команды и настройка почты: [режимы отправки писем](backend/docs/smtp.md).
+
 Frontend:
 
 ```powershell

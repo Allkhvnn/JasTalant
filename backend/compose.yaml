@@ -2,7 +2,6 @@ name: jastalant-local
 
 services:
   mailpit:
-    profiles: [mailpit]
     image: axllent/mailpit:latest
     ports:
       - "127.0.0.1:1025:1025"
