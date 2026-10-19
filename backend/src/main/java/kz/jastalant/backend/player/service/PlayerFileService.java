@@ -2,6 +2,8 @@ package kz.jastalant.backend.player.service;
 
 import jakarta.validation.Validator;
 import kz.jastalant.backend.academy.service.AcademyPermissionService;
+import kz.jastalant.backend.audit.service.AuditWriter;
+import static kz.jastalant.backend.audit.entity.AuditAction.PLAYERS_IMPORTED;
 import kz.jastalant.backend.common.exception.BusinessException;
 import kz.jastalant.backend.common.exception.ErrorCode;
 import kz.jastalant.backend.group.entity.TrainingGroup;
@@ -40,6 +42,7 @@ public class PlayerFileService {
     private final TrainingGroupRepository groups;
     private final AcademyPermissionService permissions;
     private final Validator validator;
+    private final AuditWriter audit;
 
     public PlayerFile template(UUID actor, UUID academyId, String format) {
         permissions.resolve(actor, academyId).requireManager();
@@ -74,6 +77,7 @@ public class PlayerFileService {
         }
         requests.stream().map(request -> PlayerMapper.toEntity(academyId, request)).forEach(players::save);
         players.flush();
+        if (!requests.isEmpty()) audit.record(actor, academyId, PLAYERS_IMPORTED, academyId, Integer.toString(requests.size()));
         return new PlayerImportResult(rows.size(), requests.size(), requests.size(), List.of());
     }
 

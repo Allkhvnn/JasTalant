@@ -12,6 +12,8 @@ import kz.jastalant.backend.academy.dto.*;
 import kz.jastalant.backend.academy.entity.Academy;
 import kz.jastalant.backend.academy.entity.AcademyStatus;
 import kz.jastalant.backend.academy.repository.AcademyRepository;
+import kz.jastalant.backend.audit.entity.AuditAction;
+import kz.jastalant.backend.audit.service.AuditWriter;
 import kz.jastalant.backend.common.exception.BusinessException;
 import kz.jastalant.backend.common.exception.ErrorCode;
 import kz.jastalant.backend.group.repository.TrainingGroupRepository;
@@ -31,6 +33,7 @@ public class PlatformAcademyService {
     private final TrainingGroupRepository groups;
     private final UserRepository users;
     private final Clock clock;
+    private final AuditWriter audit;
 
     @Transactional(readOnly = true)
     public PlatformAcademyPage list(UUID actor, AcademyStatus status, String search, int page, int size) {
@@ -73,6 +76,12 @@ public class PlatformAcademyService {
         if (academy.getStatus() != request.status()) {
             academy.changeStatus(request.status(), reason, actor, clock.instant());
             academies.flush();
+            var action = switch (request.status()) {
+                case ACTIVE -> AuditAction.ACADEMY_ACTIVATED;
+                case SUSPENDED -> AuditAction.ACADEMY_SUSPENDED;
+                case ARCHIVED -> AuditAction.ACADEMY_ARCHIVED;
+            };
+            audit.record(actor, null, action, academyId, academy.getName());
         }
         return toView(academy);
     }

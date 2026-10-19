@@ -3,6 +3,8 @@ package kz.jastalant.backend.onboarding.service;
 import kz.jastalant.backend.academy.entity.Academy;
 import kz.jastalant.backend.academy.repository.AcademyRepository;
 import kz.jastalant.backend.common.mail.MailLanguage;
+import kz.jastalant.backend.audit.service.AuditWriter;
+import static kz.jastalant.backend.audit.entity.AuditAction.*;
 import kz.jastalant.backend.membership.entity.AcademyMembership;
 import kz.jastalant.backend.membership.entity.AcademyRole;
 import kz.jastalant.backend.membership.repository.AcademyMembershipRepository;
@@ -33,6 +35,7 @@ public class ApplicationService {
     private final UserRepository users;
     private final Clock clock;
     private final ApplicationDecisionMailer decisionMailer;
+    private final AuditWriter audit;
 
     @Transactional(readOnly = true)
     public ApplicationView mine(UUID userId) {
@@ -57,6 +60,7 @@ public class ApplicationService {
         memberships.save(new AcademyMembership(academy, application.getApplicant(), AcademyRole.ADMIN));
         application.approve(academy.getId(), actor, clock.instant());
         decisionMailer.enqueue(application);
+        audit.record(actor, null, APPLICATION_APPROVED, id, application.getAcademyName());
         return ApplicationMapper.toView(application);
     }
 
@@ -66,6 +70,7 @@ public class ApplicationService {
         var application = pending(id);
         application.reject(reason, actor, clock.instant());
         decisionMailer.enqueue(application);
+        audit.record(actor, null, APPLICATION_REJECTED, id, application.getAcademyName());
         return ApplicationMapper.toView(application);
     }
 

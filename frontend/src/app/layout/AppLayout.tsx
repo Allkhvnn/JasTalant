@@ -39,7 +39,7 @@ export function AppLayout() {
             <>
               <NavLink className="topbar__mobile-dashboard" to="/dashboard">{t('common.dashboard')}</NavLink>
               {account?.platformRole === 'SUPER_ADMIN' ? (
-                <><NavLink to="/platform/academies">{t('common.academies')}</NavLink><NavLink to="/platform/applications">{t('common.applications')}</NavLink></>
+                <><NavLink to="/platform/academies">{t('common.academies')}</NavLink><NavLink to="/platform/applications">{t('common.applications')}</NavLink><NavLink to="/platform/audit">{t('audit.title')}</NavLink></>
               ) : (
                 <>
                   {hasStaffAccess && firstStaffAcademy && <NavLink to={`/academy/${firstStaffAcademy.academyId}`}>{t('common.crm')}</NavLink>}
@@ -50,7 +50,7 @@ export function AppLayout() {
               )}
               <details className="account-menu">
                 <summary><span>{(account?.fullName || 'J').slice(0, 1).toUpperCase()}</span>{account?.fullName || t('common.profile')}<i>⌄</i></summary>
-                <div><Link to="/dashboard">{t('common.dashboard')}</Link><LanguageSwitcher /><button type="button" onClick={handleSignOut}>{t('common.logout')}</button></div>
+                <div><Link to="/dashboard">{t('common.dashboard')}</Link>{account?.platformRole === 'SUPER_ADMIN' && <Link to="/platform/audit">{t('audit.title')}</Link>}<LanguageSwitcher /><button type="button" onClick={handleSignOut}>{t('common.logout')}</button></div>
               </details>
             </>
           ) : (

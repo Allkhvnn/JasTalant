@@ -31,6 +31,8 @@ const DevelopmentPage = lazy(() => import('../pages/development/DevelopmentPage'
 const MembersPage = lazy(() => import('../pages/members/MembersPage').then((module) => ({ default: module.MembersPage })))
 const InvitationsPage = lazy(() => import('../pages/invitations/InvitationsPage').then((module) => ({ default: module.InvitationsPage })))
 const NotFoundPage = lazy(() => import('../pages/not-found/NotFoundPage').then((module) => ({ default: module.NotFoundPage })))
+const AcademyAuditPage = lazy(() => import('../pages/audit/AuditPage').then((module) => ({ default: module.AcademyAuditPage })))
+const PlatformAuditPage = lazy(() => import('../pages/audit/AuditPage').then((module) => ({ default: module.PlatformAuditPage })))
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, loading } = useAuth()
@@ -129,6 +131,7 @@ function App() {
               }
             />
             <Route path="platform/academies" element={<SuperAdminRoute><PlatformAcademiesPage /></SuperAdminRoute>} />
+            <Route path="platform/audit" element={<SuperAdminRoute><PlatformAuditPage /></SuperAdminRoute>} />
             <Route path="platform/academies/:academyId" element={<SuperAdminRoute><PlatformAcademyPage /></SuperAdminRoute>} />
             <Route
               path="academy"
@@ -153,6 +156,7 @@ function App() {
               <Route path="development" element={<DevelopmentPage />} />
               <Route path="members" element={<AcademyAdminRoute><MembersPage /></AcademyAdminRoute>} />
               <Route path="invitations" element={<AcademyAdminRoute><InvitationsPage /></AcademyAdminRoute>} />
+              <Route path="audit" element={<AcademyAdminRoute><AcademyAuditPage /></AcademyAdminRoute>} />
             </Route>
             <Route path="*" element={<NotFoundPage />} />
           </Route>

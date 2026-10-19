@@ -1,6 +1,8 @@
 import type { Locale } from './I18nContext'
+import { auditRu, auditKk, auditEn } from './auditMessages.ts'
 
 const ru = {
+  ...auditRu,
   'site.description': 'JasTalant — CRM для футбольных академий Казахстана',
   'common.dashboard': 'Кабинет', 'common.login': 'Войти', 'common.logout': 'Выйти',
   'common.connect': 'Подключить академию', 'common.profile': 'Профиль', 'common.applications': 'Заявки', 'common.academies': 'Академии',
@@ -328,6 +330,7 @@ type MessageKey = keyof typeof ru
 type Messages = Record<MessageKey, string>
 
 const kk: Messages = {
+  ...auditKk,
   'site.description': 'JasTalant — Қазақстан футбол академияларына арналған CRM',
   'common.dashboard': 'Кабинет', 'common.login': 'Кіру', 'common.logout': 'Шығу',
   'common.connect': 'Академияны қосу', 'common.profile': 'Профиль', 'common.applications': 'Өтінімдер', 'common.academies': 'Академиялар',
@@ -652,6 +655,7 @@ const kk: Messages = {
 }
 
 const en: Messages = {
+  ...auditEn,
   'site.description': 'JasTalant — CRM for football academies in Kazakhstan',
   'common.dashboard': 'Dashboard', 'common.login': 'Sign in', 'common.logout': 'Sign out',
   'common.connect': 'Connect academy', 'common.profile': 'Profile', 'common.applications': 'Applications', 'common.academies': 'Academies',

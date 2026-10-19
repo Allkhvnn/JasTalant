@@ -1,6 +1,8 @@
 package kz.jastalant.backend.player.service;
 
 import kz.jastalant.backend.academy.service.AcademyPermissionService;
+import kz.jastalant.backend.audit.service.AuditWriter;
+import static kz.jastalant.backend.audit.entity.AuditAction.*;
 import kz.jastalant.backend.common.dto.PageResponse;
 import kz.jastalant.backend.common.exception.*;
 import kz.jastalant.backend.common.service.PageRequests;
@@ -25,6 +27,7 @@ public class PlayerService {
     private final GroupService groups;
     private final AcademyPermissionService permissions;
     private final AvatarFiles avatarFiles;
+    private final AuditWriter audit;
 
     public PageResponse<PlayerResponse> list(UUID actor, UUID academyId, UUID groupId, int page, int size) {
         var scope = permissions.resolve(actor, academyId);
@@ -53,6 +56,7 @@ public class PlayerService {
         groups.requireVisible(scope, academyId, request.groupId());
         var player = players.save(PlayerMapper.toEntity(academyId, request));
         players.flush();
+        audit.record(actor, academyId, PLAYER_CREATED, player.getId(), player.getFullName());
         return PlayerMapper.toResponse(player);
     }
 
@@ -65,14 +69,17 @@ public class PlayerService {
         groups.requireVisible(scope, academyId, request.details().groupId());
         PlayerMapper.update(player, request.details());
         players.flush();
+        audit.record(actor, academyId, PLAYER_UPDATED, player.getId(), player.getFullName());
         return PlayerMapper.toResponse(player);
     }
 
     @Transactional
     public void delete(UUID actor, UUID academyId, UUID id) {
         permissions.resolve(actor, academyId).requireManager();
-        players.delete(find(academyId, id));
+        var player = find(academyId, id);
+        players.delete(player);
         players.flush();
+        audit.record(actor, academyId, PLAYER_DELETED, id, player.getFullName());
     }
 
     public AvatarData avatar(UUID actor, UUID academyId, UUID id) {
@@ -92,6 +99,7 @@ public class PlayerService {
         var avatar = avatarFiles.read(file);
         player.updateAvatar(avatar.bytes(), avatar.contentType());
         players.flush();
+        audit.record(actor, academyId, PLAYER_AVATAR_UPDATED, id, player.getFullName());
         return PlayerMapper.toResponse(player);
     }
 
@@ -100,8 +108,10 @@ public class PlayerService {
         permissions.resolve(actor, academyId).requireManager();
         var player = find(academyId, id);
         requireVersion(player, version);
+        boolean hadAvatar = player.hasAvatar();
         player.removeAvatar();
         players.flush();
+        if (hadAvatar) audit.record(actor, academyId, PLAYER_AVATAR_REMOVED, id, player.getFullName());
         return PlayerMapper.toResponse(player);
     }
 

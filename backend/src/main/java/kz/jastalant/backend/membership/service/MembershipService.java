@@ -1,6 +1,8 @@
 package kz.jastalant.backend.membership.service;
 
 import kz.jastalant.backend.academy.service.AcademyPermissionService;
+import kz.jastalant.backend.audit.service.AuditWriter;
+import static kz.jastalant.backend.audit.entity.AuditAction.*;
 import kz.jastalant.backend.academy.repository.AcademyRepository;
 import kz.jastalant.backend.common.exception.BusinessException;
 import kz.jastalant.backend.common.exception.ErrorCode;
@@ -29,6 +31,7 @@ public class MembershipService {
     private final AcademyPermissionService permissions;
     private final AcademyRepository academies;
     private final AvatarFiles avatarFiles;
+    private final AuditWriter audit;
 
     @Transactional(readOnly = true)
     public List<AcademyMembershipView> mine(UUID userId) {
@@ -66,6 +69,9 @@ public class MembershipService {
                 && memberships.countActiveByAcademyIdAndRole(academyId, AcademyRole.ADMIN) <= 1) {
             throw new BusinessException(ErrorCode.CONFLICT, "The academy must have at least one active administrator");
         }
+        var previousRoles = Set.copyOf(membership.getRoles());
+        boolean previousActive = membership.isActive();
+        String previousName = membership.effectiveName();
         membership.update(Set.copyOf(request.roles()), request.active());
         if (request.displayName() != null) {
             try { membership.rename(request.displayName()); }
@@ -74,6 +80,16 @@ public class MembershipService {
             }
         }
         memberships.flush();
+        if (!previousRoles.equals(membership.getRoles())) {
+            audit.record(actor, academyId, MEMBER_ROLES_UPDATED, userId, membership.effectiveName());
+        }
+        if (previousActive != membership.isActive()) {
+            audit.record(actor, academyId, membership.isActive() ? MEMBER_ACCESS_ENABLED : MEMBER_ACCESS_DISABLED,
+                    userId, membership.effectiveName());
+        }
+        if (!previousName.equals(membership.effectiveName())) {
+            audit.record(actor, academyId, MEMBER_PROFILE_UPDATED, userId, membership.effectiveName());
+        }
         return AcademyMembershipMapper.toMemberView(membership);
     }
 
@@ -93,6 +109,7 @@ public class MembershipService {
         var avatar = avatarFiles.read(file);
         membership.updateAvatar(avatar.bytes(), avatar.contentType());
         memberships.flush();
+        audit.record(actor, academyId, MEMBER_AVATAR_UPDATED, userId, membership.effectiveName());
         return AcademyMembershipMapper.toMemberView(membership);
     }
 
@@ -101,8 +118,10 @@ public class MembershipService {
         permissions.resolve(actor, academyId).requireManager();
         var membership = find(academyId, userId);
         requireVersion(membership.getVersion(), version);
+        boolean hadAvatar = membership.hasAvatar();
         membership.removeAvatar();
         memberships.flush();
+        if (hadAvatar) audit.record(actor, academyId, MEMBER_AVATAR_REMOVED, userId, membership.effectiveName());
         return AcademyMembershipMapper.toMemberView(membership);
     }
 

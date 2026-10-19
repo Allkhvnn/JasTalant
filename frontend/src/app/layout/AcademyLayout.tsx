@@ -48,6 +48,7 @@ export function AcademyLayout() {
           ))}
           {canManage && <NavLink to={academyPath('members')}><span aria-hidden="true">♧</span>{t('academy.nav.members')}</NavLink>}
           {canManage && <NavLink to={academyPath('invitations')}><span aria-hidden="true">＋</span>{t('academy.nav.invitations')}</NavLink>}
+          {canManage && <NavLink to={academyPath('audit')}><span aria-hidden="true">≡</span>{t('audit.title')}</NavLink>}
         </nav>
         <div className="academy-sidebar__footer">
           <NavLink to="/dashboard"><span aria-hidden="true">←</span>{t('academy.nav.back')}</NavLink>

@@ -1,6 +1,9 @@
 package kz.jastalant.backend.development.service;
 
 import kz.jastalant.backend.academy.service.AcademyPermissionService;
+import kz.jastalant.backend.audit.service.AuditWriter;
+import kz.jastalant.backend.player.entity.Player;
+import static kz.jastalant.backend.audit.entity.AuditAction.*;
 import kz.jastalant.backend.common.dto.PageResponse;
 import kz.jastalant.backend.common.exception.BusinessException;
 import kz.jastalant.backend.common.exception.ErrorCode;
@@ -30,6 +33,7 @@ public class PlayerDevelopmentService {
     private final GroupService groups;
     private final AcademyPermissionService permissions;
     private final Clock clock;
+    private final AuditWriter audit;
 
     public PageResponse<DevelopmentAssessmentResponse> list(
             UUID actor, UUID academyId, UUID playerId, int page, int size) {
@@ -40,7 +44,7 @@ public class PlayerDevelopmentService {
     @Transactional
     public DevelopmentAssessmentResponse create(
             UUID actor, UUID academyId, UUID playerId, DevelopmentAssessmentRequest request) {
-        requireVisiblePlayer(actor, academyId, playerId);
+        var player = requireVisiblePlayer(actor, academyId, playerId);
         validateDate(request.assessmentDate());
         if (assessments.existsByAcademyIdAndPlayerIdAndAssessmentDate(
                 academyId, playerId, request.assessmentDate())) {
@@ -53,13 +57,14 @@ public class PlayerDevelopmentService {
                 request.endurance(), request.physicalFitness(), request.gameIntelligence(), request.comment(),
                 author, clock.instant()));
         assessments.flush();
+        audit.record(actor, academyId, DEVELOPMENT_CREATED, entity.getId(), player.getFullName() + " · " + entity.getAssessmentDate());
         return response(entity);
     }
 
     @Transactional
     public DevelopmentAssessmentResponse update(UUID actor, UUID academyId, UUID playerId, UUID assessmentId,
             DevelopmentAssessmentUpdateRequest request) {
-        requireVisiblePlayer(actor, academyId, playerId);
+        var player = requireVisiblePlayer(actor, academyId, playerId);
         validateDate(request.details().assessmentDate());
         var entity = find(academyId, playerId, assessmentId);
         if (entity.getVersion() != request.version()) {
@@ -73,14 +78,17 @@ public class PlayerDevelopmentService {
         entity.update(details.assessmentDate(), details.technique(), details.speed(), details.endurance(),
                 details.physicalFitness(), details.gameIntelligence(), details.comment(), clock.instant());
         assessments.flush();
+        audit.record(actor, academyId, DEVELOPMENT_UPDATED, entity.getId(), player.getFullName() + " · " + entity.getAssessmentDate());
         return response(entity);
     }
 
     @Transactional
     public void delete(UUID actor, UUID academyId, UUID playerId, UUID assessmentId) {
-        requireVisiblePlayer(actor, academyId, playerId);
-        assessments.delete(find(academyId, playerId, assessmentId));
+        var player = requireVisiblePlayer(actor, academyId, playerId);
+        var entity = find(academyId, playerId, assessmentId);
+        assessments.delete(entity);
         assessments.flush();
+        audit.record(actor, academyId, DEVELOPMENT_DELETED, assessmentId, player.getFullName() + " · " + entity.getAssessmentDate());
     }
 
     public PageResponse<DevelopmentAssessmentResponse> parentHistory(
@@ -96,12 +104,13 @@ public class PlayerDevelopmentService {
         return new PageResponse<>(result.map(this::response).getContent(), page, size, result.getTotalElements());
     }
 
-    private void requireVisiblePlayer(UUID actor, UUID academyId, UUID playerId) {
+    private Player requireVisiblePlayer(UUID actor, UUID academyId, UUID playerId) {
         var scope = permissions.resolve(actor, academyId);
         scope.requireStaff();
         var player = players.findByAcademyIdAndId(academyId, playerId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "Player not found"));
         groups.requireVisible(scope, academyId, player.getGroupId());
+        return player;
     }
 
     private PlayerDevelopmentAssessment find(UUID academyId, UUID playerId, UUID assessmentId) {

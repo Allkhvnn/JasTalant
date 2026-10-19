@@ -1,6 +1,8 @@
 package kz.jastalant.backend.attendance.service;
 
 import kz.jastalant.backend.academy.service.AcademyPermissionService;
+import kz.jastalant.backend.audit.service.AuditWriter;
+import static kz.jastalant.backend.audit.entity.AuditAction.*;
 import kz.jastalant.backend.attendance.dto.AttendanceMarkRequest;
 import kz.jastalant.backend.attendance.dto.AttendancePlayerResponse;
 import kz.jastalant.backend.attendance.dto.AttendanceSheetRequest;
@@ -40,6 +42,7 @@ public class AttendanceService {
     private final AcademyPermissionService permissions;
     private final ScheduledTrainingService trainings;
     private final Clock clock;
+    private final AuditWriter audit;
 
     public AttendanceSheetResponse get(UUID actor, UUID academyId, UUID groupId, LocalDate trainingDate) {
         validateDate(trainingDate);
@@ -58,7 +61,7 @@ public class AttendanceService {
             throw new BusinessException(ErrorCode.INVALID_REQUEST, "The group has no players");
         }
 
-        return saveSheet(academyId, groupId, null, trainingDate, roster, request);
+        return saveSheet(actor, academyId, groupId, null, trainingDate, roster, request);
     }
 
     public AttendanceSheetResponse getForTraining(UUID actor, UUID academyId, UUID trainingId) {
@@ -81,11 +84,11 @@ public class AttendanceService {
         if (roster.isEmpty()) {
             throw new BusinessException(ErrorCode.INVALID_REQUEST, "The group has no players");
         }
-        return saveSheet(academyId, training.getGroupId(), trainingId,
+        return saveSheet(actor, academyId, training.getGroupId(), trainingId,
                 training.getTrainingDate(), roster, request);
     }
 
-    private AttendanceSheetResponse saveSheet(UUID academyId, UUID groupId, UUID trainingId,
+    private AttendanceSheetResponse saveSheet(UUID actor, UUID academyId, UUID groupId, UUID trainingId,
             LocalDate trainingDate, List<Player> roster, AttendanceSheetRequest request) {
         Map<UUID, AttendanceMarkRequest> requested = new LinkedHashMap<>();
         for (var mark : request.records()) {
@@ -127,6 +130,8 @@ public class AttendanceService {
             session.touch(clock.instant());
             sessions.flush();
         }
+        audit.record(actor, academyId, created ? ATTENDANCE_CREATED : ATTENDANCE_UPDATED, session.getId(),
+                groups.get(actor, academyId, groupId).name() + " · " + trainingDate);
         return response(academyId, groupId, trainingId, trainingDate, roster, session);
     }
 
