@@ -3,6 +3,7 @@ import { useAuth } from '../../features/auth/model/useAuth'
 import { useI18n } from '../../shared/i18n/useI18n'
 import { BrandMark } from '../../shared/ui/BrandMark'
 import { LanguageSwitcher } from '../../shared/ui/LanguageSwitcher'
+import { MobileMenu } from '../../shared/ui/MobileMenu'
 
 export function HomePage() {
   const { isAuthenticated } = useAuth()
@@ -18,14 +19,21 @@ export function HomePage() {
     <section className="landing-hero" id="top">
       <header className="landing-nav">
         <Link className="landing-nav__brand" to="/" aria-label="JasTalant"><BrandMark /></Link>
-        <nav className="landing-nav__links" aria-label="Landing navigation">
+        <nav className="landing-nav__links" aria-label={t('layout.navigation')}>
           <a href="#about">{t('home.nav.about')}</a>
           <div className="landing-nav__dropdown"><button type="button">{t('home.nav.features')} <span>⌄</span></button><div><a href="#features">{t('home.feature.players')}</a><a href="#features">{t('home.feature.attendance')}</a><a href="#features">{t('home.feature.development')}</a></div></div>
           <a href="#audience">{t('home.nav.audience')}</a><a href="#how-it-works">{t('home.nav.how')}</a>
         </nav>
         <div className="landing-nav__actions"><LanguageSwitcher compact />{isAuthenticated
           ? <Link className="landing-nav__login" to="/dashboard">{t('home.openDashboard')}</Link>
-          : <><Link className="landing-nav__text-link" to="/login">{t('common.login')}</Link><Link className="landing-nav__login" to="/register">{t('common.connect')}</Link></>}</div>
+          : <><Link className="landing-nav__text-link" to="/login">{t('common.login')}</Link><Link className="landing-nav__login" to="/register">{t('common.connect')}</Link></>}
+          <MobileMenu><nav className="mobile-menu__links" aria-label={t('layout.navigation')}>
+            <a href="#about">{t('home.nav.about')}</a><a href="#features">{t('home.nav.features')}</a>
+            <a href="#audience">{t('home.nav.audience')}</a><a href="#how-it-works">{t('home.nav.how')}</a>
+            {isAuthenticated ? <Link to="/dashboard">{t('home.openDashboard')}</Link>
+              : <><Link to="/login">{t('common.login')}</Link><Link to="/register">{t('common.connect')}</Link></>}
+          </nav><LanguageSwitcher /></MobileMenu>
+        </div>
       </header>
       <div className="landing-hero__content"><p className="landing-kicker"><span /> {t('home.kicker')}</p><h1>{t('home.title')}</h1><p>{t('home.subtitle')}</p><div className="landing-hero__actions"><Link className="landing-button landing-button--primary" to={isAuthenticated ? '/dashboard' : '/register'}>{isAuthenticated ? t('home.openDashboard') : t('common.connect')}</Link><a className="landing-button landing-button--ghost" href="#about">{t('home.learnMore')}</a></div></div>
       <a className="landing-scroll-cue" href="#about" aria-label={t('home.learnMore')}>↓</a>

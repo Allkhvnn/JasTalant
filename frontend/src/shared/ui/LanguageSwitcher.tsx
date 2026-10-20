@@ -8,10 +8,10 @@ const languages: Array<{ value: Locale; label: string }> = [
 ]
 
 export function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
-  const { locale, setLocale } = useI18n()
+  const { locale, setLocale, t } = useI18n()
   return (
-    <div className={compact ? 'language-switcher language-switcher--compact' : 'language-switcher'} aria-label="Language">
-      <select value={locale} aria-label="Language" onChange={(event) => setLocale(event.target.value as Locale)}>
+    <div className={compact ? 'language-switcher language-switcher--compact' : 'language-switcher'} aria-label={t('layout.language')}>
+      <select value={locale} aria-label={t('layout.language')} onChange={(event) => setLocale(event.target.value as Locale)}>
         {languages.map((language) => <option value={language.value} key={language.value}>{language.label}</option>)}
       </select>
       {languages.map((language) => (

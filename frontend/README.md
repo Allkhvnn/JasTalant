@@ -1,5 +1,7 @@
 # JasTalant Frontend
 
+Проверка адаптивного интерфейса: [мобильная версия](docs/mobile-check.md).
+
 Frontend CRM на React, TypeScript и Vite.
 
 ## Команды

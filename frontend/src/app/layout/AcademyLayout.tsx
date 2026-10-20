@@ -4,6 +4,7 @@ import { useAuth } from '../../features/auth/model/useAuth'
 import { BrandMark } from '../../shared/ui/BrandMark'
 import { useI18n } from '../../shared/i18n/useI18n'
 import { LanguageSwitcher } from '../../shared/ui/LanguageSwitcher'
+import { MobileMenu } from '../../shared/ui/MobileMenu'
 
 export function AcademyLayout() {
   const { academy, academyPath } = useAcademy()
@@ -57,7 +58,7 @@ export function AcademyLayout() {
       </aside>
       <div className="academy-content">
         <header className="crm-topbar">
-          <div>
+          <div className="crm-topbar__identity">
             <span>{t('academy.workspace')}</span>
             <strong>{academy.name}</strong>
           </div>
@@ -81,6 +82,23 @@ export function AcademyLayout() {
               <NavLink to="/dashboard">{t('common.dashboard')}</NavLink>
               <button type="button" onClick={handleSignOut}>{t('common.logout')}</button>
             </div>
+            <MobileMenu title={academy.name}>{(close) => <>
+              <nav className="mobile-menu__links" aria-label={t('academy.workspace')}>
+                {navigation.map((item) => <NavLink key={item.path} end={'end' in item && item.end} to={academyPath(item.path)}>{item.label}</NavLink>)}
+                {canManage && <NavLink to={academyPath('members')}>{t('academy.nav.members')}</NavLink>}
+                {canManage && <NavLink to={academyPath('invitations')}>{t('academy.nav.invitations')}</NavLink>}
+                {canManage && <NavLink to={academyPath('audit')}>{t('audit.title')}</NavLink>}
+              </nav>
+              {staffAcademies.length > 1 && <label className="field"><span>{t('academy.label')}</span>
+                <select value={academy.id} onChange={(event) => { navigate(`/academy/${event.target.value}`); close() }}>
+                  {staffAcademies.map((item) => <option key={item.academyId} value={item.academyId}>{item.academyName}</option>)}
+                </select>
+              </label>}
+              <LanguageSwitcher />
+              <p className="mobile-menu__account">{account?.fullName}<small>{canManage ? t('dashboard.admin') : t('dashboard.coach')}</small></p>
+              <NavLink className="button button--secondary" to="/dashboard">{t('academy.nav.back')}</NavLink>
+              <button className="button button--secondary" type="button" onClick={() => { close(); handleSignOut() }}>{t('common.logout')}</button>
+            </>}</MobileMenu>
           </div>
         </header>
         <Outlet />

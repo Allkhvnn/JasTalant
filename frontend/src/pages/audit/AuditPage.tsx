@@ -102,12 +102,13 @@ function AuditLog({ token, path, platform }: { token: string; path: string; plat
     {authorError !== undefined && <div className="alert alert--error" role="alert">{t('audit.actorsError')} {errorMessage(authorError)}</div>}
     {loading ? <div className="list-state" role="status">{t('common.loading')}</div> : data && <>
       <p className="audit-count" role="status">{t('audit.count', { count: data.totalElements })}</p>
-      {data.items.length ? <div className="audit-table-wrap"><table className="audit-table">
+      {data.items.length ? <div className="audit-table-wrap"><table className="audit-table" role="table">
         <thead><tr><th scope="col">{t('audit.date')}</th><th scope="col">{t('audit.actor')}</th><th scope="col">{t('audit.action')}</th><th scope="col">{t('audit.object')}</th></tr></thead>
         <tbody>{data.items.map((event) => <tr key={event.id}>
-          <td><time dateTime={event.occurredAt}>{formatter.format(new Date(event.occurredAt))}</time></td>
-          <td>{event.actorName}</td><td>{t(`audit.action.${event.action}`)}</td>
-          <td>{event.action === 'PLAYERS_IMPORTED' ? t('audit.importCount', { count: event.targetName }) : event.targetName}</td>
+          <td><span className="audit-cell-label" aria-hidden="true">{t('audit.date')}</span><time dateTime={event.occurredAt}>{formatter.format(new Date(event.occurredAt))}</time></td>
+          <td><span className="audit-cell-label" aria-hidden="true">{t('audit.actor')}</span><span>{event.actorName}</span></td>
+          <td><span className="audit-cell-label" aria-hidden="true">{t('audit.action')}</span><span>{t(`audit.action.${event.action}`)}</span></td>
+          <td><span className="audit-cell-label" aria-hidden="true">{t('audit.object')}</span><span>{event.action === 'PLAYERS_IMPORTED' ? t('audit.importCount', { count: event.targetName }) : event.targetName}</span></td>
         </tr>)}</tbody>
       </table></div> : <div className="list-state"><strong>{t('audit.empty')}</strong><span>{t('audit.emptyHint')}</span></div>}
       {totalPages > 1 && <nav className="pagination" aria-label={t('audit.pages')}>

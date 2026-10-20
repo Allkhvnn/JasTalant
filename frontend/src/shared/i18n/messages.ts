@@ -2,6 +2,7 @@ import type { Locale } from './I18nContext'
 import { auditRu, auditKk, auditEn } from './auditMessages.ts'
 
 const ru = {
+  'layout.openMenu': 'Открыть меню', 'layout.closeMenu': 'Закрыть меню', 'layout.language': 'Язык',
   ...auditRu,
   'site.description': 'JasTalant — CRM для футбольных академий Казахстана',
   'common.dashboard': 'Кабинет', 'common.login': 'Войти', 'common.logout': 'Выйти',
@@ -330,6 +331,7 @@ type MessageKey = keyof typeof ru
 type Messages = Record<MessageKey, string>
 
 const kk: Messages = {
+  'layout.openMenu': 'Мәзірді ашу', 'layout.closeMenu': 'Мәзірді жабу', 'layout.language': 'Тіл',
   ...auditKk,
   'site.description': 'JasTalant — Қазақстан футбол академияларына арналған CRM',
   'common.dashboard': 'Кабинет', 'common.login': 'Кіру', 'common.logout': 'Шығу',
@@ -655,6 +657,7 @@ const kk: Messages = {
 }
 
 const en: Messages = {
+  'layout.openMenu': 'Open menu', 'layout.closeMenu': 'Close menu', 'layout.language': 'Language',
   ...auditEn,
   'site.description': 'JasTalant — CRM for football academies in Kazakhstan',
   'common.dashboard': 'Dashboard', 'common.login': 'Sign in', 'common.logout': 'Sign out',

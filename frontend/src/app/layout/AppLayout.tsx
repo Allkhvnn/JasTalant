@@ -3,6 +3,7 @@ import { useAuth } from '../../features/auth/model/useAuth'
 import { BrandMark } from '../../shared/ui/BrandMark'
 import { LanguageSwitcher } from '../../shared/ui/LanguageSwitcher'
 import { useI18n } from '../../shared/i18n/useI18n'
+import { MobileMenu } from '../../shared/ui/MobileMenu'
 
 export function AppLayout() {
   const { account, academies, isAuthenticated, signOut } = useAuth()
@@ -63,6 +64,27 @@ export function AppLayout() {
             </>
           )}
         </nav>
+        <MobileMenu>{(close) => <>
+          <nav className="mobile-menu__links" aria-label={t('layout.navigation')}>
+            {isAuthenticated ? <>
+              <NavLink to="/dashboard">{t('common.dashboard')}</NavLink>
+              {account?.platformRole === 'SUPER_ADMIN' ? <>
+                <NavLink to="/platform/academies">{t('common.academies')}</NavLink>
+                <NavLink to="/platform/applications">{t('common.applications')}</NavLink>
+                <NavLink to="/platform/audit">{t('audit.title')}</NavLink>
+              </> : <>
+                {hasStaffAccess && firstStaffAcademy && <NavLink to={`/academy/${firstStaffAcademy.academyId}`}>{t('common.crm')}</NavLink>}
+                {hasParentAccess && <NavLink to="/parent">{t('common.children')}</NavLink>}
+                {!academies.length && <NavLink to="/application">{t('common.application')}</NavLink>}
+              </>}
+            </> : <><NavLink to="/login">{t('common.login')}</NavLink><NavLink to="/register">{t('common.connect')}</NavLink></>}
+          </nav>
+          <LanguageSwitcher />
+          {isAuthenticated && <>
+            <p className="mobile-menu__account">{account?.fullName}</p>
+            <button className="button button--secondary" type="button" onClick={() => { close(); handleSignOut() }}>{t('common.logout')}</button>
+          </>}
+        </>}</MobileMenu>
       </header>
 
       <main>
