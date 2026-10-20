@@ -85,19 +85,19 @@ export function AcademyOverviewPage() {
             <div><span>{t('overview.last30')}</span><h2>{t('dashboard.attendance')}</h2></div>
             <Link to={academyPath('attendance')}>{t('overview.openSheets')}</Link>
           </div>
-          <div className="attendance-summary">
-            <div className="attendance-summary__rate">
+          <div className="overview-attendance">
+            <div className="overview-attendance__rate">
               <strong>{stats ? `${stats.attendance.attendanceRate}%` : '—'}</strong>
               <span>{t('overview.rateCaption')}</span>
               <small>{t('overview.marksInSheets', { marks: stats?.attendance.recordsMarked ?? 0, sheets: stats?.attendance.sessionsRecorded ?? 0 })}</small>
             </div>
-            <div className="attendance-summary__statuses">
-              <div><span className="attendance-dot attendance-dot--present" />{t('overview.present')}<strong>{stats?.attendance.presentCount ?? '—'}</strong></div>
-              <div><span className="attendance-dot attendance-dot--late" />{t('overview.late')}<strong>{stats?.attendance.lateCount ?? '—'}</strong></div>
-              <div><span className="attendance-dot attendance-dot--absent" />{t('overview.absent')}<strong>{stats?.attendance.absentCount ?? '—'}</strong></div>
-              <div><span className="attendance-dot attendance-dot--excused" />{t('overview.excused')}<strong>{stats?.attendance.excusedCount ?? '—'}</strong></div>
+            <div className="overview-attendance__statuses">
+              <div><span className="attendance-dot attendance-dot--present" aria-hidden="true" /><span>{t('overview.present')}</span><strong>{stats?.attendance.presentCount ?? '—'}</strong></div>
+              <div><span className="attendance-dot attendance-dot--late" aria-hidden="true" /><span>{t('overview.late')}</span><strong>{stats?.attendance.lateCount ?? '—'}</strong></div>
+              <div><span className="attendance-dot attendance-dot--absent" aria-hidden="true" /><span>{t('overview.absent')}</span><strong>{stats?.attendance.absentCount ?? '—'}</strong></div>
+              <div><span className="attendance-dot attendance-dot--excused" aria-hidden="true" /><span>{t('overview.excused')}</span><strong>{stats?.attendance.excusedCount ?? '—'}</strong></div>
             </div>
-            <div className={`attendance-summary__pending${stats?.attendance.pendingSheets ? ' attendance-summary__pending--warning' : ''}`}>
+            <div className={`overview-attendance__pending${stats?.attendance.pendingSheets ? ' overview-attendance__pending--warning' : ''}`}>
               <span>{t('overview.pending')}</span>
               <strong>{stats?.attendance.pendingSheets ?? '—'}</strong>
               <p>{stats?.attendance.pendingSheets
